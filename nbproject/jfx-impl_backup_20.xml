@@ -1579,6 +1579,7 @@
     </target>
     <target name="-do-jfx-deployment-script" depends="-check-jfx-deployment-launch" if="do-jfx-deployment-script">
         <antcall target="jfx-deployment-script"/>
+    </antcall>
     </target>
     <target name="-do-jfx-deployment-noscript" depends="-check-jfx-deployment-launch" if="do-jfx-deployment-noscript">
         <antcall target="jfx-deployment-noscript"/>
@@ -3595,6 +3596,7 @@
     </target>
     <target name="-jfx-do-jar" depends="-check-do-jar" unless="do-jar-false">
         <antcall target="jar"/>
+    </antcall>
     </target>
     <target name="-jfx-do-post-jar" depends="-init-check,-check-project" if="preloader-app">
         <!-- Preloaders are created using SE copylibs task that creates readme file relevant for SE only -->
