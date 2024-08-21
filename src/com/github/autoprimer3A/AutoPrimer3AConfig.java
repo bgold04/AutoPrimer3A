@@ -83,13 +83,16 @@ public class AutoPrimer3AConfig {
         if (System.getProperty("os.name").equals("Mac OS X")){
                 inputStream = this.getClass().
                         getResourceAsStream("primer3_core_macosx");
+                //inputStream input = classLoader.getResourceAsStream("/package/macosx/AutoPrimer3A.icns");        
         }else if (System.getProperty("os.name").equals("Linux")){
             if (System.getProperty("os.arch").endsWith("64")){
                 inputStream = this.getClass().
                         getResourceAsStream("primer3_core");
+                // inputStream input = classLoader.getResourceAsStream("/package/linux/AutoPrimer3A.png");        
             }else{
                 inputStream = this.getClass().
                         getResourceAsStream("primer3_core32");
+                //inputStream input = classLoader.getResourceAsStream("/package/windows/AutoPrimer3A.ico");       
             }
         }else{
             inputStream = this.getClass().

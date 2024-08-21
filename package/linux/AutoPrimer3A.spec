@@ -35,7 +35,7 @@ cp -r %{_sourcedir}/AutoPrimer3 %{buildroot}/opt
 /opt/AutoPrimer3
 
 %post
-cp /opt/AutoPrimer3/AutoPrimer3.desktop /usr/share/applications/
+cp /opt/AutoPrimer3/AutoPrimer3A.desktop /usr/share/applications/
 
 %preun
 rm -f /usr/share/applications/AutoPrimer3.desktop

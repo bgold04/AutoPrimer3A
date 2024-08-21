@@ -16,6 +16,7 @@
  */
 package com.github.autoprimer3A;
 
+import com.mysql.jdbc.exceptions.jdbc4;
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -70,10 +71,10 @@ public class GetGeneCoordinates {//default handles RefSeq and Encode genes
     
     public ArrayList<GeneDetails> getGeneFromSymbol(String symbol, String build, String db) 
             throws SQLException, GetGeneExonsException{
-        String fieldsToRetrieve = String.join(", ", fields );
+        String fieldsToRetrieve = String.join(", ", fields);
         checkConnection();
         ResultSet rs = doQuery("SELECT " + fieldsToRetrieve + 
-                " FROM " + build + "." + db +" WHERE name2='"+ symbol+ "'");
+                " FROM " + build + "." + db +" WHERE name2='"+ symbol + "'");
         return getTranscriptsFromResultSet(rs);
     }
     
