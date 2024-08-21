@@ -21,7 +21,7 @@
                           mainClass="${javafx.main.class}"
 			  version="3A"
 			  id="AutoPrimer3A"/>
-          <fx:info category="Science" />
+          <fx:info category="transcription" />
           <fx:resources>
               <fx:fileset dir="dist" includes="*.jar"/>  
               <fx:fileset dir="dist" includes="lib/*.jar"/>
