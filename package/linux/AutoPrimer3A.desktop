@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=AutoPrimer3A
+Comment=AutoPrimer3A
+Exec=/opt/AutoPrimer3A/AutoPrimer3A
+Icon=/opt/AutoPrimer3A/AutoPrimer3A.png
+Terminal=false
+Type=Application
+Categories=Transcription;
