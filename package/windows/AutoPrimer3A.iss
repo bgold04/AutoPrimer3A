@@ -1,5 +1,5 @@
 ;This file will be executed next to the application bundle image
-;I.e. current directory will contain folder AutoPrimer3 with application files
+;I.e. current directory will contain folder AutoPrimer3A with application files
 [Setup]
 AppId={{AutoPrimer3A}}
 AppName=AutoPrimer3A
