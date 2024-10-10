@@ -1,0 +1,9 @@
+Package: autoprimer3A
+Version: 3A
+Section: Transcription
+Maintainer: Author: David A. Parry <david.parry@igmm.ed.ac.uk> and Editor: Bert Gold <bgold04@gmail.com>
+Priority: optional
+Architecture: amd64
+Provides: AutoPrimer3A
+Description: AutoPrimer3A
+Installed-Size: 185712
