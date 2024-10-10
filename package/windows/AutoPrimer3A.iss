@@ -27,7 +27,7 @@ OutputBaseFilename=AutoPrimer3A
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
-SetupIconFile=AutoPrimer3\AutoPrimer3A.ico
+SetupIconFile=AutoPrimer3A\AutoPrimer3A.ico
 UninstallDisplayIcon={app}\AutoPrimer3A.ico
 UninstallDisplayName=AutoPrimer3A
 WizardImageStretch=No
@@ -42,7 +42,7 @@ Source: "AutoPrimer3A\AutoPrimer3A.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "AutoPrimer3A\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\AutoPrimer3A"; Filename: "{app}\AutoPrimer3A.exe"; IconFilename: "{app}\AutoPrimer3.ico"; Check: returnTrue()
+Name: "{group}\AutoPrimer3A"; Filename: "{app}\AutoPrimer3A.exe"; IconFilename: "{app}\AutoPrimer3A.ico"; Check: returnTrue()
 Name: "{commondesktop}\AutoPrimer3A"; Filename: "{app}\AutoPrimer3A.exe";  IconFilename: "{app}\AutoPrimer3A.ico"; Check: returnFalse()
 
 [Run]
