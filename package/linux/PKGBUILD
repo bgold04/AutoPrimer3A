@@ -1,0 +1,34 @@
+# Maintainer: Author: David Parry <david.parry@igmm.ed.ac.uk> Editor: Bert Gold <bgold04@gmail.com>
+pkgname=AutoPrimer3A
+pkgver=3A
+pkgrel=1
+epoch=
+pkgdesc="Automatically designs primers to genes or coordinates"
+arch=('x86_64')
+url="https://github.com/gantzgraf/autoprimer3"
+license=('GPL3')
+groups=()
+depends=()
+makedepends=()
+checkdepends=()
+optdepends=()
+provides=()
+conflicts=()
+replaces=()
+backup=()
+options=()
+install="${pkgname}.install"
+changelog=
+source=("https://github.com/bgold04/AutoPrimer3A/tree/flawed")
+noextract=()
+md5sums=("")
+validpgpkeys=()
+
+prepare() {
+    tar -zxvf data.tar.gz
+}
+
+package() {
+    tar -zxf data.tar.gz -C "${pkgdir}"
+}
+
