@@ -24,21 +24,14 @@
 package com.github.autoprimer3A;
 
 import com.github.autoprimer3A.GetEnsemblGeneCoordinates.EnsemblToNameException;
-import com.github.autoprimer3A.GetGeneCoordinates;
-import com.github.autoprimer3A.GetGeneCoordinates.GetGeneFromIDException;
-import static com.github.autoprimer3A.GetGeneCoordinates.conn;
-import com.github.autoprimer3A.GetGeneCoordinates.ResultSet;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.List;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.lang.Object;
-import java.lang.String;
-import java.sql.SQLException;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
 public class GetEnsemblGeneCoordinates extends GetUcscGeneCoordinates {
@@ -46,11 +39,6 @@ public class GetEnsemblGeneCoordinates extends GetUcscGeneCoordinates {
             "txStart", "txEnd", "cdsStart", "cdsEnd", "exonCount", "exonStarts", 
             "exonEnds", "strand"));    
     
-    
-    public String name;
-    public String id;
-    public String chrom;
-    public Integer txStart;
     public Integer txEnd;
     public String ChromStart;
     public String ChromEnd;
@@ -66,8 +54,7 @@ public class GetEnsemblGeneCoordinates extends GetUcscGeneCoordinates {
     public String ex;
     public String j;
     public Object geneDetails;
-    public String strand;
-    public String name2;        
+    public String strand;     
     public String build;
     public String chromosome;
     public Integer TotalExons;
@@ -106,34 +93,20 @@ public class GetEnsemblGeneCoordinates extends GetUcscGeneCoordinates {
     public Object rs4;      
 
     
-    public class Symbol {
-    public String symbol;   
-    public String getSymbol() {        
-        return symbol;
-    }
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
-    }
+    
     public class Id {
     public String id;   
     public String getid() {        
         return id;
     }
-    }
-    public class GeneSymbol {
-    public String geneSymbol;   
-    public String getgeneSymbol() {        
-        return geneSymbol;
-    }
-    }
+    }        
     public class Name {
     public String name;
     public String getName() {
         return name;
     }
     public void setName(String name, String id, String kgID) {
-        this.name = id = kgID;
+        this.name = id = kgID = name;
     }
     }        
 public class Name2 {

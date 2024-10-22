@@ -91,13 +91,13 @@ public Object getTranscriptsFromResultSet;
               }
     ArrayList <GeneDetails>  getGeneFromId(String id, String build, String db)  throws SQLException, GetGeneFromIDException {
       System.err.println("getGeneFromID fetching problem.");
-      return getTranscriptsFromResultSet(rs, fields);         
+      return getTranscriptsFromResultSet();         
               }
     ArrayList <GeneDetails> getGeneFromSymbol(String symbol, String build, String db) throws SQLException, GetGeneFromSymbolException {
        System.err.println("getGeneFromSymbol fetching problem."); 
-        return getTranscriptsFromResultSet(rs, fields);
+        return getTranscriptsFromResultSet();
               }
-     private ArrayList<GeneDetails> getTranscriptsFromResultSet(Object rs, ArrayList<String> fields) {
+     private ArrayList<GeneDetails> getTranscriptsFromResultSet() {
         throw new IllegalStateException
             ("Gene Hash Problem");    
      }
@@ -182,16 +182,16 @@ public void readDataBase()
 try  {//code that may throw an exception    
 conn = DriverManager.getConnection("jdbc:mysql://genome-mysql.cse.ucsc.edu" + "?user=genomep&password=password&no-auto-rehash");           
         }
-catch(SQLException ex){
+catch(SQLException en){
 {
 {
-        if (ex instanceof SQLException) {         
-                ex.printStackTrace(System.err);
-                System.err.println(((SQLException)ex).getSQLState() +
+        if (en instanceof SQLException) {         
+                en.printStackTrace(System.err);
+                System.err.println(((SQLException)en).getSQLState() +
                         "SQLState: ");
                 System.err.println("Error Code: " +
-                    ((SQLException)ex).getErrorCode());
-                System.err.println("Message: " + ex.getMessage());               
+                    ((SQLException)en).getErrorCode());
+                System.err.println("Message: " + en.getMessage());               
                 }
             }
         }
@@ -200,7 +200,7 @@ catch(SQLException ex){
 public class ResultSet {
 public ArrayList<GeneDetails> resultSet(String build, String db, String symbol) throws SQLException {  
 try  {//code that may throw an exception   
-    Connection conn = DriverManager.getConnection("jdbc:mysql://genome-mysql.cse.ucsc.edu" + "?user=genomep&password=password&no-auto-rehash");
+    conn = DriverManager.getConnection("jdbc:mysql://genome-mysql.cse.ucsc.edu" + "?user=genomep&password=password&no-auto-rehash");
 }
 catch(SQLException ex){
 ex.printStackTrace(System.err);
@@ -240,15 +240,16 @@ public class getGeneFromSymbol extends GeneDetails {
         query = ("SELECT " + fieldsToRetrieve + " FROM " + build + "." + db +" WHERE name2='"+ symbol+ "'");
         Connection conn = DriverManager.getConnection("jdbc:mysql://genome-mysql.cse.ucsc.edu" + "?user=genomep&password=password&no-auto-rehash");
         PreparedStatement ps = conn.prepareStatement(query);
-        ResultSet rs = (ResultSet) ps.executeQuery(query);                     
-    return getTranscriptsFromResultSet(rs, fields);       
-    }  
-private ArrayList<GeneDetails> 
-        getTranscriptsFromResultSet
-        (ResultSet rs, ArrayList<String> fields) {
-           return getTranscriptsFromResultSet(rs, fields); 
-        }
+        rs = (ResultSet) ps.executeQuery(query);                     
+    return getTranscriptsFromResultSet();       
+    }
 }
+//private ArrayList<GeneDetails> 
+//        getTranscriptsFromResultSet
+//        () {
+//           return getTranscriptsFromResultSet(); 
+//        }
+//}
 public class getGeneFromId extends GeneDetails {
 //public void getGeneFromId(String id, String build, String db){
 public ArrayList <GeneDetails> getGeneFromId(String id, String build, String db) throws SQLException, GetGeneFromIDException {
@@ -256,15 +257,16 @@ String fieldsToRetrieve = String.join(", ", fields );
      query = ("SELECT " + fieldsToRetrieve + " FROM " + build + "." + db + " WHERE name='"+ id + "'");
      Connection conn = DriverManager.getConnection("jdbc:mysql://genome-mysql.cse.ucsc.edu" + "?user=genomep&password=password&no-auto-rehash");
      PreparedStatement ps =  conn.prepareStatement(query);
-     ResultSet rs = (ResultSet)ps.executeQuery(query);
-    return getTranscriptsFromResultSet(rs, fields);
+     rs = (ResultSet)ps.executeQuery(query);
+    return getTranscriptsFromResultSet();
     }
-private ArrayList<GeneDetails> 
-        getTranscriptsFromResultSet
-        (ResultSet rs, ArrayList<String> fields) {
-           return getTranscriptsFromResultSet(rs, fields); 
 }
-} 
+//private ArrayList<GeneDetails> 
+//        getTranscriptsFromResultSet
+//        () {
+//           return getTranscriptsFromResultSet(); 
+//}
+//} 
 class getTranscriptsFromResultSet {
 
     public ArrayList<GeneDetails> getTranscriptsFromResultSet(ResultSet rs, ArrayList<String> fields)
@@ -310,7 +312,7 @@ protected GeneDetails geneHashToGeneDetails(HashMap<String,String> gene)
         try{    
            geneDetails.setExons(gene.get("exonStarts"), gene.get("exonEnds"));
         }
-        catch(Exception ex) {
+        catch(GeneDetails.GeneExonsException ex) {
   
             throw new RuntimeException("Error in hash "
                     + geneDetails.getId() + ", gene " + geneDetails.getSymbol(), ex);
