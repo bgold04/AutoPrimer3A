@@ -1,0 +1,81 @@
+#first try with javac
+
+sudo javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d classdir -sourcepath src src/*/*/*/*.java src/*/*/*/*/*.java src/*/*/*/*/*/*.java src/*/*/*/*/*/*/*.java -d -classpath /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.java
+
+#second try with javac
+
+sudo javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d classdir -sourcepath src src/*/*/*/*.java src/*/*/*/*/*.java src/*/*/*/*/*/*/*.java -d -classpath /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.java
+
+#third try with javac
+
+sudo javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d classdir -sourcepath src src/*/*/*/*.java src/*/*/*/*/*.java -d -classpath /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.java
+to which javac responded -- javac: directory not found: -classpath
+ 
+ 
+#fourth try with javac
+sudo javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d classdir -sourcepath src src/*/*/*/*.java src/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.java
+#javac: directory not found: classdir
+#To which I responded by creating the classdir and renewing my cp: argument 
+
+#fifth try with javac:
+sudo javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d classdir -sourcepath src src/*/*/*/*.java src/*/*/*/*/*.java -cp /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.java
+#which resulted in:
+#src/org/controlsfx/dialog/LoginDialog.java:89: error: <identifier> expected
+#                new(javafx.util.Pair.class)();
+#                   ^
+#src/org/controlsfx/dialog/LoginDialog.java:89: error: ';' expected
+#                new(javafx.util.Pair.class)();
+#                                           ^
+#2 errors
+#
+#
+#since now getting two errors, try to look for update to dialogs
+#put openjfx-dialogs-1.0.3.jar in a directory named openjfx.dialogs and located at /Users/[username]/openjfx.dialogs, then ran:
+java -jar /usr/local/Cellar/procyon-decompiler/0.6.0/libexec/procyon-decompiler-0.6.0.jar -o . *.jar
+#this resulted in:
+#Decompiling com/sun/javafx/scene/control/skin/ButtonBarSkin...
+#Decompiling javafx/scene/control/Alert...
+#Decompiling javafx/scene/control/ButtonBar...
+#Decompiling javafx/scene/control/ButtonType...
+#Decompiling javafx/scene/control/ChoiceDialog...
+#Decompiling javafx/scene/control/Dialog...
+#Decompiling javafx/scene/control/DialogEvent...
+#Decompiling javafx/scene/control/DialogPane...
+#Decompiling javafx/scene/control/FXDialog...
+#Decompiling javafx/scene/control/HeavyweightDialog...
+#Decompiling javafx/scene/control/TextInputDialog...
+#Decompiling org/controlsfx/DialogResources...
+
+ 
+#sixth try with javac
+javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d openjfxbase -sourcepath impl impl/org/controlsfx/ImplUtils.java impl/org/controlsfx/autocompletion/AutoCompletionTextFieldBinding.java impl/org/controlsfx/autocompletion/SuggestionProvider.java impl/org/controlsfx/i18n/Localization.java impl/org/controlsfx/i18n/SimpleLocalizedStringProperty.java impl/org/controlsfx/skin/AutoCompletePopup.java impl/org/controlsfx/skin/AutoCompletePopupSkin.java impl/org/controlsfx/skin/ButtonBarSkin.java impl/org/controlsfx/skin/CustomTextFieldSkin.java impl/org/controlsfx/skin/SegmentedButtonSkin.java -sourcepath org org/controlsfx/control/ButtonBar.java org/controlsfx/control/SegmentedButton.java org/controlsfx/control/action/Action.java org/controlsfx/control/action/ActionUtils.java org/controlsfx/control/decoration/Decoration.java org/controlsfx/control/decoration/GraphicDecoration.java org/controlsfx/control/textfield/AutoCompletionBinding.java org/controlsfx/control/textfield/CustomPasswordField.java org/controlsfx/control/textfield/CustomTextField.java org/controlsfx/control/textfield/TextFields.java org/controlsfx/dialog/Dialog.java org/controlsfx/dialog/Dialogs.java org/controlsfx/tools/Duplicatable.java org/controlsfx/tools/Platform.java org/controlsfx/tools/Utils.java org/controlsfx/tools/ValueExtractor.java org/controlsfx/validation/Severity.java org/controlsfx/validation/ValidationMessage.java org/controlsfx/validation/ValidationSupport.java org/controlsfx/validation/Validator.java org/controlsfx/validation/decoration/GraphicValidationDecoration.java org/controlsfx/validation/decoration/ValidationDecoration.java
+#158 error messages resulted; I will capture them in a file named errors.txr in the directory work
+javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d openjfxbase -sourcepath impl impl/org/controlsfx/ImplUtils.java impl/org/controlsfx/autocompletion/AutoCompletionTextFieldBinding.java impl/org/controlsfx/autocompletion/SuggestionProvider.java impl/org/controlsfx/i18n/Localization.java impl/org/controlsfx/i18n/SimpleLocalizedStringProperty.java impl/org/controlsfx/skin/AutoCompletePopup.java impl/org/controlsfx/skin/AutoCompletePopupSkin.java impl/org/controlsfx/skin/ButtonBarSkin.java impl/org/controlsfx/skin/CustomTextFieldSkin.java impl/org/controlsfx/skin/SegmentedButtonSkin.java -sourcepath org org/controlsfx/control/ButtonBar.java org/controlsfx/control/SegmentedButton.java org/controlsfx/control/action/Action.java org/controlsfx/control/action/ActionUtils.java org/controlsfx/control/decoration/Decoration.java org/controlsfx/control/decoration/GraphicDecoration.java org/controlsfx/control/textfield/AutoCompletionBinding.java org/controlsfx/control/textfield/CustomPasswordField.java org/controlsfx/control/textfield/CustomTextField.java org/controlsfx/control/textfield/TextFields.java org/controlsfx/dialog/Dialog.java org/controlsfx/dialog/Dialogs.java org/controlsfx/tools/Duplicatable.java org/controlsfx/tools/Platform.java org/controlsfx/tools/Utils.java org/controlsfx/tools/ValueExtractor.java org/controlsfx/validation/Severity.java org/controlsfx/validation/ValidationMessage.java org/controlsfx/validation/ValidationSupport.java org/controlsfx/validation/Validator.java org/controlsfx/validation/decoration/GraphicValidationDecoration.java org/controlsfx/validation/decoration/ValidationDecoration.java > /Users/bgold/controlsfx.jailbreak.censored/errors.txt 2>&1
+# deposited error messages in /Users/bgold/controlsfx.jailbreak.censored/errors.txt
+
+
+
+
+#seventh try using sourcepath and classpath wildcards and reformed java
+#cd ~/controlsfx_jar_extraction_to_classes
+#mkdir openjfx
+sudo javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d openjfx -sourcepath impl impl/*/*/*/*.class impl/*/*/*/*/*.class impl/*/*/*/*/*/*.class impl/*/*/*/*/*/*/*.class -sourcepath org org/*/*/*/*.class org/*/*/*/*/*.class org/*/*/*/*/*/*.class -sourcepath org org/*/*/*/*.java org/*/*/*/*/*.java org/*/*/*/*/*/*.java -classpath /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.java
+ -classpath /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.java
+
+
+
+#8th try:
+
+sudo javac -Xmaxerrs 2000 -Xmaxwarns 1000 -d openjfx -sourcepath impl impl/*/*/*/* impl/*/*/*/*/* impl/*/*/*/*/*/* impl/*/*/*/*/*/*/* -sourcepath org org/*/*/*/* org/*/*/*/*/* org/*/*/*/*/*/* -classpath /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*.java /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/*/*/*/*/*/*.jar > errors.txt 2>&1
+
+
+
+
+
+
+
+
+
+
+
+
