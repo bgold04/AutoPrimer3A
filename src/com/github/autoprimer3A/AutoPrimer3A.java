@@ -63,7 +63,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Hyperlink;
@@ -88,20 +92,73 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javax.swing.*;
 import net.lingala.zip4j.exception.ZipException;
-import org.controlsfx.control.action.Action;
-import org.controlsfx.dialog.Dialog;
-import org.controlsfx.dialog.Dialogs;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  *
- * @author david
+ * @author David Parray, with Bert Gold, PhD editor
  */
 public class AutoPrimer3A extends Application implements Initializable{
     
-    String VERSION = "3.1";
+    String VERSION = "3A";
+
+public String build;    
+public Integer cdsEnd;
+public Integer cdsStart;
+public String chrom;
+public Integer ChromEnd;
+public String chromosome;
+public String Chromosome;
+public String chromSet;
+public Integer ChromStart;
+public String db;
+public String e;
+public Integer end;
+public Integer EndPos;
+public String exon;
+public String exonCount;
+public String exonEnds;     
+public String exonStarts;
+public String ex;
+public Object fieldsToRetrieve;
+public String f;
+public String gene;
+public Object geneDetails;
+public String genes;
+public String genome;
+public Object GetGeneCoordinates;
+public String id;
+public String name;
+public Object ps;
+public String query;
+public Object rs;
+public String snpDb;
+public Object sql;
+public Integer start;
+public Integer StartPos;  
+public Object statement;
+public String Statement;
+public String strand;
+public Object st;    
+public String symbol;        
+public Integer TotalExons;    
+public Integer txStart;
+public Integer txEnd;
+public Object getTranscriptsFromResultSet;   
+public String t;
+public String regions;
+public Object document;
+public Object node;
+
+/*
+* @param args the command line arguments
+*/
     
     @FXML
     AnchorPane mainPane;
@@ -208,11 +265,95 @@ public class AutoPrimer3A extends Application implements Initializable{
     @FXML
     CheckBox autoSelectMisprimingLibraryCheckBox;
     
+   
+    public class GetUcscBuildsAndTables {
+
+    // Other methods and fields...
+        
+private String buildToMapMaster; // Cache the master map value
+
+public String getBuildToMapMaster() {
+    return buildToMapMaster;
+}    
+public void fetchBuildToMapMaster(Document document) {
+    try {
+        // Assume the master map is stored in a specific XML node
+
+        NodeList nodes = document.getElementsByTagName("buildMaster");
+        if (nodes.getLength() > 0) {
+            Node node = nodes.item(0);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                buildToMapMaster = node.getTextContent().trim();
+            }
+        }
+    } 
+    catch (Exception e) {
+
+        e.printStackTrace();
+    }
+}        
+   public LinkedHashMap<String, String> getBuildToDescription() {
+    LinkedHashMap<String, String> buildToDescription = new LinkedHashMap<>();
+
+    try {
+        // Assuming you already have an XML Document from UCSC
+    
+        Document document = getUcscDocument(); // Method to fetch/return the UCSC document
+        
+        NodeList builds = document.getElementsByTagName("build");
+
+        for (int i = 0; i < builds.getLength(); i++) {
+            Node buildNode = builds.item(i);
+            if (buildNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element buildElement = (Element) buildNode;
+                String buildName = buildElement.getAttribute("name");
+                String description = buildElement.getTextContent().trim();
+
+                if (!buildName.isEmpty() && !description.isEmpty()) {
+                    buildToDescription.put(buildName, description);
+                }
+            }
+        }
+    } 
+    catch (Exception e) {
+        
+        e.printStackTrace();
+    }
+
+    return buildToDescription;
+}
+     
+        
+
+public LinkedHashSet<String> extractTablesFromDocument(Document document) {
+        LinkedHashSet<String> tables = new LinkedHashSet<>();
+        try {
+            // Assuming the Document represents an XML structure
+    
+            NodeList tableNodes = document.getElementsByTagName("table");
+            for (int i = 0; i < tableNodes.getLength(); i++) {
+                Node tableNode = tableNodes.item(i);
+                if (tableNode.getNodeType() == Node.ELEMENT_NODE) {
+                    Element tableElement = (Element) tableNode;
+                    String tableName = tableElement.getTextContent().trim();
+                    if (!tableName.isEmpty()) {
+                        tables.add(tableName);
+                    }
+                }
+            }
+        } 
+        catch (Exception e) {
+            
+            e.printStackTrace();
+        }
+        return tables;
+    }
+}
     Boolean CANRUN = false;
     final BuildToMisprimingLibrary buildToMisprime = new BuildToMisprimingLibrary();
     Boolean autoSelectMisprime = true;
     final GetUcscBuildsAndTables buildsAndTables = new GetUcscBuildsAndTables();
-    
+
     File primer3ex; 
     File thermoConfig;
     String defaultSizeRange = "150-250 100-300 301-400 401-500 501-600 "
@@ -231,6 +372,288 @@ public class AutoPrimer3A extends Application implements Initializable{
     int MAX_LINES_PER_DESIGN = 100;//max lines for coordinates design
     int MAX_REGION_SIZE = 100000;//longest permissible region size = 100 kb
     
+  private void connectToUcsc() {
+        progressIndicator.setProgress(-1);
+        final Task<LinkedHashMap<String, String>> getBuildsTask = 
+                new Task<LinkedHashMap<String, String>>() {
+            @Override
+            protected LinkedHashMap<String, String> call() 
+                    throws DocumentException, MalformedURLException{
+
+                buildsAndTables.connectToUcsc();
+
+                return buildsAndTables.getBuildToDescription();
+                
+            }
+            
+        };
+  }
+    private void checkUcscTables(final String genome) {
+    Task<Document> task = createCheckUcscTablesTask(genome);
+
+    // Run the task in a background thread and handle its completion
+    task.setOnSucceeded(event -> {
+        Document tableDocument = task.getValue();
+        // Process the tableDocument (e.g., update UI or store it somewhere)
+        LinkedHashSet<String> tables = buildsAndTables.extractTablesFromDocument(tableDocument);
+        setTables(tables);
+    });
+
+    task.setOnFailed(event -> {
+        System.err.println("Failed to fetch UCSC tables for genome: " + genome);
+        task.getException().printStackTrace();
+    });
+
+    new Thread(task).start(); // Run the task on a background thread
+}
+
+private Task<Document> createCheckUcscTablesTask(final String genome) {
+
+    return new Task<Document>() {
+        @Override
+        protected Document call() throws DocumentException, MalformedURLException {
+            System.out.println("Checking tables for " + genome);
+
+            return buildsAndTables.getTableXmlDocument(genome);
+        }
+    };
+}
+private void setTables(LinkedHashSet<String> tables) {
+    if (tables == null || tables.isEmpty()) {
+        databaseChoiceBox.getItems().clear();
+        databaseChoiceBox.getItems().add("No tables found - please choose another genome.");
+        setCanRun(false);
+        databaseChoiceBox.getSelectionModel().selectFirst();
+        return;
+    }
+
+    LinkedHashSet<String> genes = getGenesFromTables(tables);
+
+    LinkedHashSet<String> snps = getSnpsFromTables(tables);
+
+    databaseChoiceBox.getItems().clear();
+    if (genes.isEmpty()) {
+        databaseChoiceBox.getItems().add("No gene databases found - please choose another genome.");
+        setCanRun(false);
+        databaseChoiceBox.getSelectionModel().selectFirst();
+    } else {
+        databaseChoiceBox.getItems().addAll(genes);
+        if (databaseChoiceBox.getItems().contains("refGene")) {
+            databaseChoiceBox.getSelectionModel().select("refGene");
+        } else {
+            databaseChoiceBox.getSelectionModel().selectFirst();
+        }
+        setCanRun(true);
+    }
+
+    snpsChoiceBox.getItems().clear();
+    snpsChoiceBox.getItems().add("No");
+    snpsChoiceBox.getItems().addAll(snps);
+    snpsChoiceBox.getSelectionModel().selectFirst();
+}
+     private void getBuildTables(final String id, final boolean forceRefresh){
+        databaseChoiceBox.getItems().clear();
+        snpsChoiceBox.getItems().clear();
+        if (ap3AConfig.getBuildToTables().containsKey(id) && !forceRefresh){
+            setTables(ap3AConfig.getBuildToTables().get(id));
+            if (! checkedAlready.contains(id)){
+                checkUcscTables(id);
+                checkedAlready.add(id);
+            }
+            return;
+        }
+        if (! ap3AConfig.getBuildXmlFile(id).exists()){
+            checkedAlready.add(id);
+        }
+        setLoading(true);
+        progressLabel.setText("Getting database information for " + id);
+
+        final Task<Document> getTablesTask = new Task<Document>(){
+
+            @Override
+            protected Document call() 
+                    throws DocumentException, MalformedURLException, IOException{
+                //System.out.println("Called getTablesTask...");
+                return ap3AConfig.getBuildXmlDocument(id, forceRefresh);// buildsAndTables.getAvailableTables(id);
+            }
+        };
+  }
+  public void refreshDatabase(){
+        if (genomeChoiceBox.getSelectionModel().isEmpty()){//implies no connection to UCSC
+            connectToUcsc();
+        }else{//we've got a connection to UCSC but want to refresh the database info for current build
+            final String id = (String) genomeChoiceBox.getSelectionModel().getSelectedItem();
+                getBuildTables(id, true);
+        }
+  }
+ private static void openFile(File f) throws IOException {
+    if (f == null) {
+        throw new IllegalArgumentException("File cannot be null");
+    }
+
+    String command;
+    String os = System.getProperty("os.name");
+
+    if (os.contains("Linux")) {
+        command = "xdg-open " + f.getAbsolutePath();
+    } else if (os.contains("Mac OS X")) {
+        command = "open " + f.getAbsolutePath();
+    } else if (os.contains("Windows")) {
+        command = "cmd /C start \"\" \"" + f.getAbsolutePath() + "\"";
+    } else {
+        // Unsupported operating system
+        throw new UnsupportedOperationException("Unsupported operating system: " + os);
+    }
+
+    // Execute the command
+    try {
+        Runtime.getRuntime().exec(command);
+    } catch (IOException e) {
+        throw new IOException("Failed to open file: " + f.getAbsolutePath(), e);
+    }
+}
+public void showAbout(Event ev) {
+    try {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("about.fxml"));
+        Pane page = loader.load();
+        Scene scene = new Scene(page);
+        Stage stage = new Stage();
+        stage.setScene(scene);
+
+        // Optional: Add stylesheet for consistent styling
+        // scene.getStylesheets().add(AutoPrimer3A.class.getResource("autoprimer3A.css").toExternalForm());
+
+        AboutController controller = loader.getController();
+        controller.setVersion(VERSION);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.getIcons().add(new Image(this.getClass().getResourceAsStream("icon.png")));
+        stage.setTitle("About AutoPrimer3A");
+        stage.show();
+    } catch (IOException ex) {
+        // Show error dialog if the "About" window fails to load
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText("Could not display about dialog");
+        alert.setContentText("Please see exception for details.");
+
+        // Optionally log the exception to the console for debugging
+        ex.printStackTrace();
+
+        alert.showAndWait();
+    }
+}
+  private void setCanRun(boolean designable){
+        CANRUN = designable;
+        runButton.setDisable(!CANRUN);
+        cancelButton.setDisable(CANRUN);
+        runButton2.setDisable(!CANRUN);
+        cancelButton2.setDisable(CANRUN);
+    }    
+    private void setRunning(boolean running){
+        setCanRun(!running);
+        refreshButton.setDisable(running);
+        refreshMenuItem.setDisable(running);
+        genomeChoiceBox.setDisable(running);
+        genomeChoiceBox2.setDisable(running);
+        databaseChoiceBox.setDisable(running);
+        snpsChoiceBox.setDisable(running);
+        snpsChoiceBox2.setDisable(running);
+        designToChoiceBox.setDisable(running);
+        minDistanceTextField.setDisable(running);
+        minDistanceTextField2.setDisable(running);
+        flankingRegionsTextField.setDisable(running);
+        flankingRegionsTextField2.setDisable(running);
+        genesTextField.setDisable(running);
+        refreshButton.setDisable(running);
+        loadFileButton.setDisable(running);
+    }
+private void setLoading(boolean loading){
+        setCanRun(!loading);
+        setRunning(loading);
+        if (loading){
+            progressIndicator.setProgress(-1);
+        }else{
+            progressIndicator.setProgress(0);
+        }
+    }  
+public void showHelp(){
+        try{
+            File instructionsPdf = File.createTempFile("autoprimer3_instructions", ".pdf" );
+            instructionsPdf.deleteOnExit();
+            InputStream inputStream = this.getClass().
+                    getResourceAsStream("instructions.pdf");
+            OutputStream outputStream = new FileOutputStream(instructionsPdf);
+            int read = 0;
+            byte[] bytes = new byte[1024];    
+            while ((read = inputStream.read(bytes)) != -1) {
+                    outputStream.write(bytes, 0, read);
+            }
+            inputStream.close();
+            outputStream.close();
+            openFile(instructionsPdf);
+        }catch(IOException ex){
+
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+    errorAlert.setTitle("Open failed");
+    errorAlert.setHeaderText("Could not open instructions PDF");
+    errorAlert.setContentText(
+        "Exception encountered when attempting to open "
+                            + "AutoPrimer3A's help pdf. See below:" +
+        ex.getMessage()
+    );
+    errorAlert.showAndWait();
+}
+    }
+private void displaySizeRangeError(){
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Invalid Size Range");
+        alert.setHeaderText("Invalid Primer Product Size Range values");
+        alert.setContentText("Primer Product Size Range field must be in the format '"
+                        + "100-200 200-400' etc.");
+        alert.showAndWait();
+    }      
+  EventHandler<KeyEvent> checkNumeric(){
+        return new EventHandler<KeyEvent>(){
+            @Override
+            public void handle(KeyEvent ke) {
+                if (!ke.getCharacter().matches("\\d")){
+                    ke.consume();
+                }
+            }
+        };
+    }
+    
+    EventHandler<KeyEvent> checkDecimal(){
+        return new EventHandler<KeyEvent>(){
+            @Override
+            public void handle(KeyEvent ke) {
+                if (!ke.getCharacter().matches("[\\d.]")){
+                    ke.consume();
+                }
+            }
+        };
+    }
+    
+    EventHandler<KeyEvent> checkRange(){
+        return new EventHandler<KeyEvent>(){
+            @Override
+            public void handle(KeyEvent ke) {
+                if (!ke.getCharacter().matches("[\\d-\\s]")){
+                    ke.consume();
+                }
+            }
+        };
+    }
+    
+    private boolean checkSizeRange(TextField field){
+        List<String> split = Arrays.asList(field.getText().split("\\s+"));
+        for (String s: split){
+            if (!s.matches("\\d+-\\d+")){
+                return false;
+            }
+        }
+        return true;
+    }  
     @Override
     public void start(final Stage primaryStage) {
         try {
@@ -293,44 +716,62 @@ public class AutoPrimer3A extends Application implements Initializable{
         cancelButton2.onActionProperty().bind(cancelButton.onActionProperty());
         cancelButton.setCancelButton(true);
         setLoading(true);
-        try{
-            ap3AConfig = new AutoPrimer3AConfig();
-        }catch(IOException ex){
-            Dialogs configError = Dialogs.create().title("Config Error").
-                masthead("Error Preparing AutoPrimer3A Files").
-                message("AutoPrimer3A encountered an error when trying to prepare"
-                    + " required temporary files. See exception below.").
-                styleClass(Dialog.STYLE_CLASS_NATIVE);
-            configError.showException(ex);
-        }
+       try {
+    ap3AConfig = new AutoPrimer3AConfig();
+} catch (IOException ex) {
+    // Create an error alert
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle("Config Error");
+    alert.setHeaderText("Error Preparing AutoPrimer3A Files");
+    alert.setContentText(
+        "AutoPrimer3A encountered an error when trying to prepare " +
+        "required temporary files. See exception details below:\n\n" + ex.getMessage()
+    );
+            // Optionally log the exception details somewhere (e.g., console or log file)
+
+
+    // Show the alert
+    alert.showAndWait();
+}
         try{
             ap3AConfig.readGenomeXmlFile();
             //ap3AConfig.readTablesXmlFiles();
         }catch (IOException|DocumentException ex){
-            Dialogs configError = Dialogs.create().title("Config Error").
-                masthead("Error Reading AutoPrimer3A Genome Database").
-                message("AutoPrimer3A encountered an error reading local stored "
-                    + "genome details - see exception below.").
-                styleClass(Dialog.STYLE_CLASS_NATIVE);
-            configError.showException(ex);
-        }
+    // Create an error alert
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle("Config Error");
+    alert.setHeaderText("Error Reading AutoPrimer3A Genome Database");
+    alert.setContentText(
+        "AutoPrimer3A encountered an error reading local stored "
+                    + "genome details - see exception below.:\n\n" + ex.getMessage()
+    );
+            // Optionally log the exception details somewhere (e.g., console or log file)
+
+    // Show the alert
+    alert.showAndWait();
+}
         try{
             primer3ex = ap3AConfig.extractP3Executable();
             misprimeDir = ap3AConfig.extractMisprimingLibs();
             thermoConfig = ap3AConfig.extractThermoConfig();
             ap3AConfig.extractTableXml();
         }catch(IOException|ZipException ex){
-            Dialogs configError = Dialogs.create().title("Config Error").
-            masthead("Error Extracting Primer3 Files").
-            message("AutoPrimer3A encountered an error while trying to extract"
+// Create an error alert
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle("Config Error");
+    alert.setHeaderText("Error Extracting Primer3 Files");
+    alert.setContentText(
+        "AutoPrimer3A encountered an error while trying to extract"
                     + " the primer3 executable and primer3 config files. "
                     + "AutoPrimer3A will have to exit. If this reoccurs you may"
                     + " need to reinstall AutoPrimer3A."
-                    + "See exception below.").
-                    styleClass(Dialog.STYLE_CLASS_NATIVE);
-            configError.showException(ex);
-            Platform.exit();
-        }
+                    + "See exception below.:\n\n" + ex.getMessage()
+    );
+            // Optionally log the exception details somewhere (e.g., console or log file)
+
+    // Show the alert
+    alert.showAndWait();
+}          
         designToChoiceBox.getSelectionModel().selectFirst();
         refreshButton.setOnAction(new EventHandler<ActionEvent>(){
            @Override
@@ -437,7 +878,20 @@ public class AutoPrimer3A extends Application implements Initializable{
                 }
             }
         });
-        
+    }
+         private void resetPrimerSettings(){
+        for (TextField f: defaultPrimer3Values.keySet()){
+            f.setText(defaultPrimer3Values.get(f));
+        }
+    }
+    private void resetEmptyPrimerSettings(){
+        for (TextField f: defaultPrimer3Values.keySet()){
+            if (f.getText().isEmpty()){
+                f.setText(defaultPrimer3Values.get(f));
+            }else if (f.getText().trim().length() < 1){
+                f.setText(defaultPrimer3Values.get(f));
+            }
+        }
         autoSelectMisprimingLibraryCheckBox.selectedProperty().addListener(
                 new ChangeListener<Boolean>(){
             @Override
@@ -456,8 +910,8 @@ public class AutoPrimer3A extends Application implements Initializable{
                 });
    
             }
-        });
-        
+        });        
+ 
         genomeChoiceBox.getItems().clear();
         genomeChoiceBox.getItems().addAll(new ArrayList<>(ap3AConfig.getBuildToDescription().keySet()));
         genomeChoiceBox.getSelectionModel().selectFirst();
@@ -500,10 +954,11 @@ public class AutoPrimer3A extends Application implements Initializable{
         resetValuesButton.setOnAction(new EventHandler<ActionEvent>(){
            @Override
            public void handle(ActionEvent actionEvent){
-                resetPrimerSettings();
+        
+               resetPrimerSettings();
             }
         });
-            
+        
         mainTabPane.getSelectionModel().selectedItemProperty().addListener(
                 new ChangeListener<Tab>(){
                     @Override
@@ -663,89 +1118,210 @@ public class AutoPrimer3A extends Application implements Initializable{
         misprimingLibraryChoiceBox.getSelectionModel().select(lib);
     }
     
-    private void checkUcscGenomes(){
-        final Task<Void> getGenomesTask = 
-                new Task<Void>(){
+    
+    private void checkUcscGenomes() {
+    final Task<Void> task = getGenomesTask();
+    new Thread(task).start(); // Example: Execute the task in a new thread
+}
+    private Task<Void> getGenomesTask() {
+    return new Task<Void>() {
+        @Override
+        protected Void call() throws DocumentException, MalformedURLException {
+            System.out.println("Checking genome list.");
+
+            buildsAndTables.connectToUcsc();
+            return null;
+        }
+    };
+        getGenomesTask.setOnSucceeded
+
+                (new EventHandler<WorkerStateEvent>(){
             @Override
-            protected Void call() 
-                    throws DocumentException, MalformedURLException{
-                System.out.println("Checking genome list.");
-                buildsAndTables.connectToUcsc();
-                return null;
-            }
-        };
-        getGenomesTask.setOnSucceeded(new EventHandler<WorkerStateEvent>(){
-            @Override
+            
             public void handle (WorkerStateEvent e){
                 boolean rewriteConfig = false;
                 if (! ap3AConfig.getBuildToDescription().keySet().equals(
                         buildsAndTables.getBuildToDescription().keySet()) &&
                         buildsAndTables.getBuildToDescription() != null){
                     //warn and repopulate genome choicebox
-                    Action warn = Dialogs.create().title("Warning").
-                        masthead("Repopulating Genomes").
-                        message("The available genomes have changed. AutoPrimer3A "
-                                + "will now repopulate the genome menu.").
-                        styleClass(Dialog.STYLE_CLASS_NATIVE).showWarning();
-                    System.out.println("Genome list has changed - repopulating genome choice box");
-                    rewriteConfig = true;
-                    ap3AConfig.setBuildToDescription(buildsAndTables.getBuildToDescription());
-                    String currentSel = (String) genomeChoiceBox.getSelectionModel().getSelectedItem();
-                    genomeChoiceBox.getItems().clear();
-                    genomeChoiceBox.getItems().addAll(ap3AConfig.getBuildToDescription().keySet());
-                    if (genomeChoiceBox.getItems().contains(currentSel)){
-                        genomeChoiceBox.getSelectionModel().select(currentSel);
-                    }else{
-                        genomeChoiceBox.getSelectionModel().selectFirst();
-                    }
-                }else{
-                    System.out.println("Genome list is the same.");
-                }
-                
-                if (!ap3AConfig.getBuildToMapMaster().equals
-                        (buildsAndTables.getBuildToMapMaster()) && 
-                        buildsAndTables.getBuildToMapMaster() != null){
-                    ap3AConfig.setBuildToMapMaster(buildsAndTables.getBuildToMapMaster());
-                    System.out.println("Build to map master has changed - will rewrite.");
-                    rewriteConfig = true;
-                }
-                if (rewriteConfig){
-                    try{
-                        System.out.println("re writing output");
-                        ap3AConfig.writeGenomeXmlFile(buildsAndTables.getDasGenomeXmlDocument());
-                    }catch (IOException ex){
-                        //ex.printStackTrace();
-                        Dialogs writeErr = Dialogs.create().title("Error").
-                            masthead("Error Updating Genomes!").
-                            message("AutoPrimer3A encountered an error writing "
-                                    + "updated genomes to its database file."
-                                    + "See exception below.").
-                            styleClass(Dialog.STYLE_CLASS_NATIVE);
-                            writeErr.showException(ex);
-                    }
-                }
-            }
-        });
+                    // Create an error alert
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Warning");
+                    alert.setHeaderText("Repopulating Genomes");
+                    alert.setContentText(
+                    "The available genomes have changed. AutoPrimer3A "
+                        + "will now repopulate the genome menu."
+                        );
+System.out.println("Genome list has changed - repopulating genome choice box");
+rewriteConfig = true;
+ap3AConfig.setBuildToDescription(buildsAndTables.getBuildToDescription());
+String currentSel = (String) genomeChoiceBox.getSelectionModel().getSelectedItem();
+genomeChoiceBox.getItems().clear();
+genomeChoiceBox.getItems().addAll(ap3AConfig.getBuildToDescription().keySet());
 
-        getGenomesTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
-            @Override
-            public void handle (WorkerStateEvent e){
-                progressIndicator.setProgress(0);
-                System.out.println(e.getSource().getException());
-                Dialogs checkErr = Dialogs.create().title("Error").
-                    masthead("Gene Search Failed!").
-                    message("AutoPrimer3A encountered an error when performing "
-                            + "a background check of available genomes."
-                            + "See exception below.").
-                    styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    checkErr.showException(e.getSource().getException());
-            }
-        });
-       new Thread(getGenomesTask).start();
+if (genomeChoiceBox.getItems().contains(currentSel)) {
+    genomeChoiceBox.getSelectionModel().select(currentSel);
+} else {
+    genomeChoiceBox.getSelectionModel().selectFirst();
+}
+
+System.out.println("Genome list is the same.");
+                }
+// Check if the build-to-map master has changed
+if (buildsAndTables.getBuildToMapMaster() != null && 
+    !ap3AConfig.getBuildToMapMaster().equals(buildsAndTables.getBuildToMapMaster())) {
+    //ap3AConfig.setBuildToMapMaster(buildsAndTables.getBuildToMapMaster());
+    System.out.println("Build-to-map master has changed - will rewrite.");
+    rewriteConfig = true;
+}
+// If configuration needs rewriting
+if (rewriteConfig) {
+    try {
+        System.out.println("Rewriting output...");
+        
+        ap3AConfig.writeGenomeXmlFile(buildsAndTables.getDasGenomeXmlDocument());
+    } 
+    catch { (IOException ex) {
+    
+        // Handle the error using a modern JavaFX Alert
+        Alert alert2 = new Alert(Alert.AlertType.ERROR);
+        alert2.setTitle("Error");
+        alert2.setHeaderText("Error Updating Genomes!");
+        alert2.setContentText(
+            "AutoPrimer3A encountered an error writing updated genomes to its database file. " +
+            "See exception details below:\n\n" + ex.getMessage()
+        );
+        {
+        // Optionally log the exception details
+        
+            ex.printStackTrace();
+        }
+        {
+        // Display the alert dialog
+        
+            alert.showAndWait();
+    }
     }
     
+            getGenomesTask.setOnFailed
+        (new EventHandler<WorkerStateEvent>() {
+    @Override
+    public void handle(WorkerStateEvent e) {
+        progressIndicator.setProgress(0);
+        System.out.println(e.getSource().getException());
+        // Create an error alert
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText("Gene Search Failed!");
+        alert.setContentText(
+            "AutoPrimer3A encountered an error when performing "
+            + "a background check of available genomes."
+            + "See exception below."
+        );
+
+        // Optionally log the exception details somewhere (e.g., console or log file)
+        e.getSource().getException().printStackTrace();
+    }
+        // Show the alert
+        alert.showAndWait();
+    }
+        
+                        
+    checkUcscTablesTask.setOnSucceeded(new EventHandler<WorkerStateEvent>()) {
+        
+        @Override
+        public void handle(WorkerStateEvent e) {
+            System.out.println("Finished getting tables for " + genome);
+            Document doc = (Document) e.getSource().getValue();
+
+            try {
+                if (!ap3AConfig.getBuildXmlDocument(genome).asXML().equals(doc.asXML()) && doc != null) {
+                    // Tables differ, check whether it affects relevant tables
+                    System.out.println("Tables differ!");
+                    LinkedHashSet tables = ap3AConfig.readTableFile(doc);
+
+                    if (configTablesDiffer(tables, ap3AConfig.getBuildToTables().get(genome))) {
+                        System.out.println("SNP/Gene tables differ!");
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Tables Updated");
+                        alert.setHeaderText("Gene/SNP Tables Updated");
+                        alert.setContentText(
+                            "The Gene/SNP tables for your currently selected genome have been updated."
+                        );
+
+                        // Show the alert dialog
+                        alert.showAndWait();
+
+                        String g = (String) genomeChoiceBox.getSelectionModel().getSelectedItem();
+                        if (g.equals(genome)) {
+                            String curSnp = (String) snpsChoiceBox.getSelectionModel().getSelectedItem();
+                            snpsChoiceBox.getItems().clear();
+                            snpsChoiceBox.getItems().add("No");
+                            snpsChoiceBox.getItems().addAll(getSnpsFromTables(tables));
+
+                            if (snpsChoiceBox.getItems().contains(curSnp)) {
+                                snpsChoiceBox.getSelectionModel().select(curSnp);
+                            } else {
+                                snpsChoiceBox.getSelectionModel().selectFirst();
+                            }
+
+                            String curGene = (String) databaseChoiceBox.getSelectionModel().getSelectedItem();
+                            databaseChoiceBox.getItems().clear();
+                            databaseChoiceBox.getItems().addAll(getGenesFromTables(tables));
+
+                            if (databaseChoiceBox.getItems().contains(curGene)) {
+                                databaseChoiceBox.getSelectionModel().select(curGene);
+                            } else {
+                                databaseChoiceBox.getSelectionModel().selectFirst();
+                            }
+                        }
+                    }
+                 // Update and rewrite config file silently
+                    ap3AConfig.getBuildToTables().put(genome, tables);
+
+                    try {
+                        System.out.println("Writing new xml database file");
+                        ap3AConfig.writeTableXmlFile(doc, genome);
+                    } catch (IOException ex) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText("Error Updating Genome Information");
+                        alert.setContentText(
+                            "AutoPrimer3A encountered an error writing "
+                            + "updated gene/SNP tables to its database "
+                            + "file for genome " + genome + ". "
+                            + "See exception below."
+                        );
+
+                        alert.showAndWait();
+                    }
+                } else {
+                    System.out.println("Tables are the same");
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    });
+
+                    // Create an error alert
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Gene Search Failed!");
+                    alert.setContentText(
+        "AutoPrimer3A encountered an error when performing "
+                            + "a background check of available genomes."
+                            + "See exception below.");
+        
+    // Optionally log the exception details somewhere (e.g., console or log file)
+    //ex.printStackTrace();
+
+    // Show the alert
+    alert.showAndWait();
+
+    }   
     
-    private void checkUcscTables(final String genome){
+private void checkUcscTables(final String genome){
         //Background check that tables for given genome are up to date
         final Task<Document> checkUcscTablesTask = 
             new Task<Document>(){
@@ -753,116 +1329,109 @@ public class AutoPrimer3A extends Application implements Initializable{
             protected Document call() 
                     throws DocumentException, MalformedURLException{
                 System.out.println("Checking tables for " + genome);
+
                 return buildsAndTables.getTableXmlDocument(genome);
             }
         };
-        checkUcscTablesTask.setOnSucceeded(new EventHandler<WorkerStateEvent>(){
-            @Override
-            public void handle (WorkerStateEvent e){
-                System.out.println("Finished getting tables for " + genome);
-                Document doc = (Document) e.getSource().getValue();
-                try{
-                    
-                    if (! ap3AConfig.getBuildXmlDocument(genome).asXML().equals(doc.asXML()) && 
-                        doc != null){
-                    /*Tables differ, but we need to check whether it affects
-                    relevant tables (i.e. genes or SNPs)
-                    */
-                        System.out.println("Tables differ!");
-                        LinkedHashSet tables = ap3AConfig.readTableFile(doc);
-                        if (configTablesDiffer(tables, 
-                                ap3AConfig.getBuildToTables().get(genome))){
-                            /*if available genes or snps differ we need to alert
-                            user and change fields in choiceboxes
-                            */
-                            System.out.println("SNP/Gene tables differ!");
-                            // ALERT USER IF GENOME STILL SELECTED
-                            Dialogs inf = Dialogs.create().title("Tables Updated").
-                                masthead("Gene/SNP Tables Updated").
-                                message("The Gene/SNP tables for your currently "
-                                        + "selected genome have been updated." ).
-                                styleClass(Dialog.STYLE_CLASS_NATIVE);
-                            inf.showInformation();
-                            String g = (String) genomeChoiceBox.getSelectionModel().getSelectedItem();
-                            if (g.equals(genome)){
-                                String curSnp = (String) snpsChoiceBox.getSelectionModel().getSelectedItem();
-                                snpsChoiceBox.getItems().clear();
-                                snpsChoiceBox.getItems().add("No");
-                                snpsChoiceBox.getItems().addAll(getSnpsFromTables(tables));
-                                if (snpsChoiceBox.getItems().contains(curSnp)){
-                                    snpsChoiceBox.getSelectionModel().select(curSnp);
-                                }else{
-                                    snpsChoiceBox.getSelectionModel().selectFirst();
-                                }
+        checkUcscTablesTask.setOnSucceeded(
 
-                                String curGene = (String) databaseChoiceBox.getSelectionModel().getSelectedItem();
-                                databaseChoiceBox.getItems().clear();
-                                databaseChoiceBox.getItems().addAll(getGenesFromTables(tables));
-                                if (databaseChoiceBox.getItems().contains(curGene)){
-                                    databaseChoiceBox.getSelectionModel().select(curGene);
-                                }else{
-                                    databaseChoiceBox.getSelectionModel().selectFirst();
-                                }
-                            }
-                        }/*even if available genes and snps are the same we just
-                           change and rewrite rewrite the config file silently
-                           to prevent this happening until tables change again
-                         */
-                        ap3AConfig.getBuildToTables().put(genome, tables);
-                        try{
-                            System.out.println("Writing new xml database file");
-                            ap3AConfig.writeTableXmlFile(doc, genome);
-                        }catch (IOException ex){
-                            //ex.printStackTrace();
-                            Dialogs writeErr = Dialogs.create().title("Error").
-                                masthead("Error Updating Genome Information!").
-                                message("AutoPrimer3A encountered an error writing "
-                                        + "updated gene/SNP tables to its database "
-                                        + "file for genome " + genome + ". "
-                                        + "See exception below.").
-                                styleClass(Dialog.STYLE_CLASS_NATIVE);
-                                writeErr.showException(ex);
-                        }
+                new EventHandler<WorkerStateEvent>()
+        
+                @Override
 
-                    }else{
-                        System.out.println("Tables are the same");
+                public void handle(WorkerStateEvent e) {
+    
+                    System.out.println("Finished getting tables for " + genome);
+    Document doc = (Document) e.getSource().getValue();
+    try {
+        if (doc != null && !ap3AConfig.getBuildXmlDocument(genome).asXML().equals(doc.asXML())) {
+            // Tables differ, check whether it affects relevant tables
+            System.out.println("Tables differ!");
+            LinkedHashSet<String> tables = ap3AConfig.readTableFile(doc);
+            if (configTablesDiffer(tables, ap3AConfig.getBuildToTables().get(genome))) {
+                // Handle SNP/Gene table differences
+                System.out.println("SNP/Gene tables differ!");
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Tables Updated");
+                alert.setHeaderText("Gene/SNP Tables Updated");
+                alert.setContentText(
+                    "The Gene/SNP tables for your currently selected genome have been updated."
+                );
+                alert.showAndWait();
+
+                String g = (String) genomeChoiceBox.getSelectionModel().getSelectedItem();
+                if (g.equals(genome)) {
+                    // Update SNPs
+                    String curSnp = (String) snpsChoiceBox.getSelectionModel().getSelectedItem();
+                    snpsChoiceBox.getItems().clear();
+                    snpsChoiceBox.getItems().add("No");
+                    snpsChoiceBox.getItems().addAll(getSnpsFromTables(tables));
+                    if (snpsChoiceBox.getItems().contains(curSnp)) {
+                        snpsChoiceBox.getSelectionModel().select(curSnp);
+                    } else {
+                        snpsChoiceBox.getSelectionModel().selectFirst();
                     }
-                }catch(DocumentException|IOException ex){
-                    Dialogs docErr = Dialogs.create().title("Error").
-                        masthead("Error Updating Genome Information!").
-                        message("AutoPrimer3A encountered an error "
-                                + "updating gene/SNP tables from UCSC for genome"
-                                + genome + ". "
-                                + "See exception below.").
-                        styleClass(Dialog.STYLE_CLASS_NATIVE);
-                        docErr.showException(ex);
+
+                    // Update Genes
+                    String curGene = (String) databaseChoiceBox.getSelectionModel().getSelectedItem();
+                    databaseChoiceBox.getItems().clear();
+                    databaseChoiceBox.getItems().addAll(getGenesFromTables(tables));
+                    if (databaseChoiceBox.getItems().contains(curGene)) {
+                        databaseChoiceBox.getSelectionModel().select(curGene);
+                    } else {
+                        databaseChoiceBox.getSelectionModel().selectFirst();
+                    }
                 }
             }
-        });
-        checkUcscTablesTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
+            // Update configuration
+            ap3AConfig.getBuildToTables().put(genome, tables);
+            try {
+                System.out.println("Writing new XML database file");
+                ap3AConfig.writeTableXmlFile(doc, genome);
+            } catch (IOException ex) {
+                showErrorAlert("Error Updating Genome Information", "AutoPrimer3A encountered an error writing updated gene/SNP tables to its database file for genome " + genome + ".", ex);
+            }
+        } else {
+            System.out.println("Tables are the same");
+        }
+    } catch (DocumentException | IOException ex) {
+        showErrorAlert("Error Updating Genome Information!", "AutoPrimer3A encountered an error updating gene/SNP tables from UCSC for genome " + genome + ".", ex);
+    }
+}
+
+// Helper method to display error alerts
+private void showErrorAlert(String title, String content, Exception ex) {
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle(title);
+    alert.setHeaderText(title);
+    alert.setContentText(content + "\n\nSee exception below:\n" + ex.getMessage());
+    alert.showAndWait();
+}
+        
+           checkUcscTablesTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
             @Override
             public void handle (WorkerStateEvent e){
                 System.out.println(e.getSource().getException());
-                Dialogs checkErr = Dialogs.create().title("Error").
-                    masthead("Gene Search Failed!").
-                    message("AutoPrimer3A encountered an error when performing "
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Gene Search Failed!");
+            alert.setContentText("AutoPrimer3A encountered an error when performing "
                             + "a background check of available gene/SNP tables "
-                            + "for genome " + genome + ". See exception below.").
-                    styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    checkErr.showException(e.getSource().getException());
-            }
-        });
-        
+                            + "for genome " + genome + ". See exception below.");
+            alert.showAndWait();
+        }
+              
+                   
        new Thread(checkUcscTablesTask).start();
-    }
-    
+        
+
     //only checks snp and gene tables in lists to see if they are the same
     private boolean configTablesDiffer(LinkedHashSet<String> tables, 
             LinkedHashSet<String> configTables){
-        ArrayList<String> tableComp = new ArrayList<>();
-        ArrayList<String> configComp = new ArrayList<>();
-        for (String t: tables){
-            if (matchesGeneTable(t) || matchesSnpTable(t)){
+                ArrayList<String> tableComp = new ArrayList<>();
+                ArrayList<String> configComp = new ArrayList<>();
+                    for (String t: tables){
+                    if (matchesGeneTable(t) || matchesSnpTable(t)){
                 tableComp.add(t);
             }
         }
@@ -873,91 +1442,91 @@ public class AutoPrimer3A extends Application implements Initializable{
         }
         return (! (tableComp.containsAll(configComp) && configComp.containsAll(tableComp)));
     }
-    
+        
     private LinkedHashSet<String> getGenesFromTables(LinkedHashSet<String> tables){
         LinkedHashSet<String> genes = new LinkedHashSet<>();
         for (String t: tables){
             if (matchesGeneTable(t)){
                 genes.add(t);
+            
             }
-        }
+            
         return genes;
+            }
     }
+        private boolean matchesSnpTable(String t)
+{
 
-    private LinkedHashSet<String> getSnpsFromTables(LinkedHashSet<String> tables){
+            return t.matches("^snp\\d+(\\w+)*");
+    }        
+        private LinkedHashSet<String> 
+                getSnpsFromTables 
+        (LinkedHashSet<String> tables){
         LinkedHashSet<String> snps = new LinkedHashSet<>();
         for (String t: tables){
             if (matchesSnpTable(t)){
                 snps.add(t);
             }
+        
+            return snps;
+            
         }
-        return snps;
-    }
-    
+        }   
     private boolean matchesGeneTable(String t){
+        
         return (t.equals("refGene") || t.equals("knownGene") || 
-                t.equals("ensGene") || t.equals("xenoRefGene"));
+                t.equals("ensGene") || t.equals("xenoRefGene"));        
     }
-    
-    private boolean matchesSnpTable(String t){
-        return t.matches("^snp\\d+(\\w+)*");
-    }
-    
-    private void connectToUcsc() {
-        progressIndicator.setProgress(-1);
-        final Task<LinkedHashMap<String, String>> getBuildsTask = 
-                new Task<LinkedHashMap<String, String>>() {
+
+        }
+                
+}
+getBuildsTask.setOnSucceeded(new EventHandler<WorkerStateEvent>(){
             @Override
-            protected LinkedHashMap<String, String> call() 
-                    throws DocumentException, MalformedURLException{
-                buildsAndTables.connectToUcsc();
-                return buildsAndTables.getBuildToDescription();
-            }
-        };
-        getBuildsTask.setOnSucceeded(new EventHandler<WorkerStateEvent>(){
-            @Override
+            
             public void handle (WorkerStateEvent e){
-                LinkedHashMap<String, String> buildIds = 
+
+LinkedHashMap<String, String> buildIds = 
                         (LinkedHashMap<String, String>) e.getSource().getValue();
                 genomeChoiceBox.getItems().clear();
                 genomeChoiceBox.getItems().addAll(buildIds.keySet());
                 genomeChoiceBox.getSelectionModel().selectFirst();
                 ap3AConfig.setBuildToDescription(buildIds);
                 ap3AConfig.setBuildToMapMaster(buildsAndTables.getBuildToMapMaster());
-                try{
+} try {
                     System.out.println("Writing new xml database file");
                     ap3AConfig.writeGenomeXmlFile();
                 }catch (DocumentException|IOException ex){
                     //ex.printStackTrace();
-                    Dialogs writeErr = Dialogs.create().title("Error").
-                            masthead("Error Writing Genome Data!").
-                            message("AutoPrimer3A encountered an error writing "
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Error Writing Genome Data!");
+                    alert.setContentText("AutoPrimer3A encountered an error writing "
                                     + "updated genomes to its database file."
-                                    + "See exception below.").
-                            styleClass(Dialog.STYLE_CLASS_NATIVE);
-                            writeErr.showException(ex);
-                }
+                                    + "See exception below.");
+                    alert.showAndWait();
+                }                                           
                 setLoading(false);
-            }
-        });
-
+                {                                
         getBuildsTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
-            @Override
-            public void handle (WorkerStateEvent e){
+ 
+@Override
+
+public void handle (WorkerStateEvent e){
                 progressIndicator.setProgress(0);
-                Dialogs configError = Dialogs.create().title("Error").
-                    masthead("Error Retrieving Genome Information from UCSC").
-                    message("AutoPrimer3A encountered an error connecting to the "
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("Error Retrieving Genome Information from UCSC");
+                alert.setContentText("AutoPrimer3A encountered an error connecting to the "
                             + "UCSC server to retrieve available genomes. "
                             + "See exception below. Use the Refresh/Reconnect "
-                            + "button to try again.").
-                            styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    configError.showException(e.getSource().getException());
-                System.out.println(e.getSource().getException());
+                            + "button to try again.");
+                alert.showAndWait();
+                        
                 setLoading(false);
                 setCanRun(false);
             }
-        });
+{
         getBuildsTask.setOnCancelled(new EventHandler<WorkerStateEvent>(){
             @Override
             public void handle (WorkerStateEvent e){
@@ -971,68 +1540,22 @@ public class AutoPrimer3A extends Application implements Initializable{
            @Override
            public void handle(ActionEvent actionEvent){
                 getBuildsTask.cancel();
-
-            }
+  
+           }
        });
         progressLabel.setText("Connecting to UCSC...");
         new Thread(getBuildsTask).start();
-    }
-    
-    
-    private void setTables(LinkedHashSet<String> tables){
-        LinkedHashSet<String> genes = getGenesFromTables(tables);
-        LinkedHashSet<String> snps = getSnpsFromTables(tables);
-        databaseChoiceBox.getItems().clear();
-        if (genes.isEmpty()){
-            databaseChoiceBox.getItems().add("No gene databases found - please choose another genome.");
-            setCanRun(false);
-            databaseChoiceBox.getSelectionModel().selectFirst();
-        }else{
-            databaseChoiceBox.getItems().addAll(genes);
-            if (databaseChoiceBox.getItems().contains("refGene")){
-                databaseChoiceBox.getSelectionModel().select("refGene");
-            }else{
-                databaseChoiceBox.getSelectionModel().selectFirst();
-            }
-            setCanRun(true);
-        }
-        snpsChoiceBox.getItems().clear();
-        snpsChoiceBox.getItems().add("No");
-        snpsChoiceBox.getItems().addAll(snps);
-        snpsChoiceBox.getSelectionModel().selectFirst();
-    }
-    
-    private void getBuildTables(final String id, final boolean forceRefresh){
-        databaseChoiceBox.getItems().clear();
-        snpsChoiceBox.getItems().clear();
-        if (ap3AConfig.getBuildToTables().containsKey(id) && !forceRefresh){
-            setTables(ap3AConfig.getBuildToTables().get(id));
-            if (! checkedAlready.contains(id)){
-                checkUcscTables(id);
-                checkedAlready.add(id);
-            }
-            return;
-        }
-        if (! ap3AConfig.getBuildXmlFile(id).exists()){
-            checkedAlready.add(id);
-        }
-        setLoading(true);
-        progressLabel.setText("Getting database information for " + id);
-        final Task<Document> getTablesTask = new Task<Document>(){
-            @Override
-            protected Document call() 
-                    throws DocumentException, MalformedURLException, IOException{
-                //System.out.println("Called getTablesTask...");
-                return ap3AConfig.getBuildXmlDocument(id, forceRefresh);// buildsAndTables.getAvailableTables(id);
-            }
-        };
-
+            }   
+        ;
+{
         getTablesTask.setOnSucceeded(new EventHandler<WorkerStateEvent>(){
+            
             @Override
+            
             public void handle (WorkerStateEvent e){
                 //System.out.println("getTablesTask succeeded.");
-                Document doc = (Document) e.getSource().getValue();
-                try{
+            }    Document doc = (Document) e.getSource().getValue();
+             try {
                     LinkedHashSet<String> tables = ap3AConfig.readTableFile(doc);
                     ap3AConfig.getBuildToTables().put(id, tables);    
                     if (! doc.asXML().equals(ap3AConfig.getBuildXmlDocument(id).asXML())){
@@ -1041,15 +1564,15 @@ public class AutoPrimer3A extends Application implements Initializable{
                             ap3AConfig.writeTableXmlFile(doc, id);
                         }catch (IOException ex){
                             //ex.printStackTrace();
-                            Dialogs writeErr = Dialogs.create().title("Error").
-                                masthead("Error Updating Genome Information!").
-                                message("AutoPrimer3A encountered an error writing "
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("Error Updating Genome Information!");
+                alert.setContentText("AutoPrimer3A encountered an error writing "
                                         + "updated gene/SNP tables to the database "
                                         + "file for genome " + id + ". "
-                                        + "See exception below.").
-                                styleClass(Dialog.STYLE_CLASS_NATIVE);
-                                writeErr.showException(ex);
-                        }
+                                        + "See exception below.");
+                alert.showAndWait();
+    }                       
                     }
                     setTables(tables);
                     progressIndicator.setProgress(0);
@@ -1057,36 +1580,31 @@ public class AutoPrimer3A extends Application implements Initializable{
                     setLoading(false);
                 }catch(IOException|DocumentException ex){
                     //ex.printStackTrace();
-                    Dialogs writeErr = Dialogs.create().title("Error").
-                        masthead("Error Reading Updating Genome Information!").
-                        message("AutoPrimer3A encountered an error reading "
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText("Error Reading Updating Genome Information!");
+        alert.setContentText("AutoPrimer3A encountered an error reading "
                                 + "updated gene/SNP tables from UCSC for genome "
-                                + id + ". See exception below.").
-                        styleClass(Dialog.STYLE_CLASS_NATIVE);
-                        writeErr.showException(ex);
-                }
-            }
-        });
-
-        getTablesTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
+                                + id + ". See exception below.");
+        alert.showAndWait();                                        
+                getTablesTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
             @Override
             public void handle (WorkerStateEvent e){
                 progressLabel.setText("Get Tables Task Failed");
-                Dialogs configError = Dialogs.create().title("Error").
-                    masthead("Error Retrieving Gene/SNP Tables from UCSC").
-                    message("AutoPrimer3A encountered an error connecting to the "
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText("Error Retrieving Gene/SNP Tables from UCSC");
+        alert.setContentText("AutoPrimer3A encountered an error connecting to the "
                             + "UCSC server to retrieve available gene/SNP tables. "
                             + "See exception below. Use the Refresh/Reconnect "
-                            + "button to try again or select a different genome.").
-                            styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    configError.showException(e.getSource().getException());
-                //System.out.println("getTablesTask failed.");
-                System.out.println(e.getSource().getException());
-                setLoading(false);
-                setCanRun(false);
+                            + "button to try again or select a different genome.");
+        alert.showAndWait();
             }
-        });
-
+            {
+                setLoading(false);
+                setCanRun(false);           
+        }
+                
         getTablesTask.setOnCancelled(new EventHandler<WorkerStateEvent>(){
             @Override
             public void handle (WorkerStateEvent e){
@@ -1103,113 +1621,35 @@ public class AutoPrimer3A extends Application implements Initializable{
                 getTablesTask.cancel();
 
             }
-       });
-
+       }
+       
         progressIndicator.setProgress(-1);
         new Thread(getTablesTask).start();
-    }
-    
-    
-    private void displaySizeRangeError(){
-        Dialogs sizeRangeError = Dialogs.create().title("Invalid Size Range").
-                masthead("Invalid Primer Product Size Range values").
-                message("Primer Product Size Range field must be in the format '"
-                        + "100-200 200-400' etc.")
-                .styleClass(Dialog.STYLE_CLASS_NATIVE);
-        sizeRangeError.showError();
-    }
-    
-    EventHandler<KeyEvent> checkNumeric(){
-        return new EventHandler<KeyEvent>(){
-            @Override
-            public void handle(KeyEvent ke) {
-                if (!ke.getCharacter().matches("\\d")){
-                    ke.consume();
-                }
-            }
-        };
-    }
-    
-    EventHandler<KeyEvent> checkDecimal(){
-        return new EventHandler<KeyEvent>(){
-            @Override
-            public void handle(KeyEvent ke) {
-                if (!ke.getCharacter().matches("[\\d.]")){
-                    ke.consume();
-                }
-            }
-        };
-    }
-    
-    EventHandler<KeyEvent> checkRange(){
-        return new EventHandler<KeyEvent>(){
-            @Override
-            public void handle(KeyEvent ke) {
-                if (!ke.getCharacter().matches("[\\d-\\s]")){
-                    ke.consume();
-                }
-            }
-        };
-    }
-    
-    private boolean checkSizeRange(TextField field){
-        List<String> split = Arrays.asList(field.getText().split("\\s+"));
-        for (String s: split){
-            if (!s.matches("\\d+-\\d+")){
-                return false;
-            }
-        }
-        return true;
-    }
-            
-    private void resetPrimerSettings(){
-        for (TextField f: defaultPrimer3Values.keySet()){
-            f.setText(defaultPrimer3Values.get(f));
-        }
-    }
-    
-    private void resetEmptyPrimerSettings(){
-        for (TextField f: defaultPrimer3Values.keySet()){
-            if (f.getText().isEmpty()){
-                f.setText(defaultPrimer3Values.get(f));
-            }else if (f.getText().trim().length() < 1){
-                f.setText(defaultPrimer3Values.get(f));
-            }
-        }
-        
-    }
-    
-    
-    public void refreshDatabase(){
-        if (genomeChoiceBox.getSelectionModel().isEmpty()){//implies no connection to UCSC
-            connectToUcsc();
-        }else{//we've got a connection to UCSC but want to refresh the database info for current build
-            final String id = (String) genomeChoiceBox.getSelectionModel().getSelectedItem();
-                getBuildTables(id, true);
-        }
-    }
-    
-    public void loadRegionsFile(){
+     }
+                                                
+                        public void loadRegionsFile(){
     /*  we need to know how many regions we already have to make sure we don't go over
         MAX_LINES_PER_DESIGN
     */
         final int regions = regionsTextArea.getText().split("\\n").length;
         if (regions > MAX_LINES_PER_DESIGN){
-            Dialogs maxVariantsWarning = 
-                Dialogs.create().title("Max Regions Already Reached").
-                masthead("Maximum of " + MAX_LINES_PER_DESIGN 
-                    + " lines allowed per design").
-                message("Cannot load file - you have already reached the maximum"
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Max Regions Already Reached");
+        alert.setHeaderText("Maximum of " + MAX_LINES_PER_DESIGN 
+                    + " lines allowed per design");
+        alert.setContentText("Cannot load file - you have already reached the maximum"
                         + " number of lines allowed per design.  Delete some or "
-                        + "all regions if you want to load regions from a file.")
-                .styleClass(Dialog.STYLE_CLASS_NATIVE);
-            maxVariantsWarning.showWarning();
+                        + "all regions if you want to load regions from a file.");
+        alert.showAndWait();
+    
+}
+        
             progressLabel.setText("Max regions reached.");
             return;
         }
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select input file");
-        
+        {
         HashMap<String, ArrayList<String>> extFilters = new HashMap<>(); 
         extFilters.put("Any Region file", new ArrayList<>(
                 Arrays.asList("*.bed", "*.bed.gz", "*.vcf", "*vcf.gz", "*.txt", "*txt.gz",
@@ -1271,23 +1711,22 @@ public class AutoPrimer3A extends Application implements Initializable{
                                    Platform.runLater(new Runnable() {
                                         @Override
                                         public void run() {
-                                            Dialogs maxVariantsError = 
-                                                Dialogs.create().title(
-                                                "Maximum Number of Lines Reached").
-                                                masthead("Maximum of " + MAX_LINES_PER_DESIGN 
-                                                    + " lines allowed per design").
-                                                message("You have reached the maximum "
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Maximum of " + MAX_LINES_PER_DESIGN 
+                                                    + " lines allowed per design");
+                    alert.setContentText("You have reached the maximum "
                                                     + "number of lines allowed per "
                                                     + "design while processing line " 
                                                     + lastLine + " of file " + inFile.getName()
                                                     + ". " + validRegions  
                                                     +  " valid regions added. "
                                                     + "Remaining lines will not be "
-                                                    + "read.")
-                                                .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                                            maxVariantsError.showWarning();
+                                                    + "read.");
+                        alert.showAndWait();
+                        }
                                         }
-                                    });
+                                    );
                                    break;                                   
                                }
                                regionStrings.add(r);
@@ -1301,14 +1740,18 @@ public class AutoPrimer3A extends Application implements Initializable{
                         br.close();
                     }catch(IOException ex){
                         //ex.printStackTrace();
-                        Dialogs readError = Dialogs.create().title("Error").
-                            masthead("Error Loading Region File").
-                            message("Could not read region file. "
-                                    + "See exception below.").
-                                    styleClass(Dialog.STYLE_CLASS_NATIVE);
-                            readError.showException(ex);
-                    }
-                    if (invalid > 0){
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("Error Loading Region File");
+                alert.setContentText("Could not read region file. "
+                                    + "See exception below.");
+
+        // Optionally log the exception to the console for debugging
+                ex.printStackTrace();
+
+                alert.showAndWait();
+            }                        
+                     if (invalid > 0){
                         StringBuilder msg = new StringBuilder(invalid)
                                 .append(" invalid region");
                         if (invalid > 1){
@@ -1324,13 +1767,12 @@ public class AutoPrimer3A extends Application implements Initializable{
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
-                                Dialogs invalidRegionsError = Dialogs.create().title(
-                                       "Invalid Regions").
-                                    masthead("Invalid Regions Identified").
-                                    message(messageString)
-                                    .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                                invalidRegionsError.showWarning();
-                            }
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Invalid Regions");
+                        alert.setHeaderText("Invalid Regions Identified");
+                        alert.setContentText(messageString);
+                        alert.showAndWait();
+                }
                         });
                     }
                     return regionStrings;
@@ -1372,14 +1814,14 @@ public class AutoPrimer3A extends Application implements Initializable{
                     progressLabel.setText("Loading failed!");
                     progressIndicator.progressProperty().unbind();
                     progressIndicator.progressProperty().set(0);
-                    Dialogs readError = Dialogs.create().title("Error").
-                    masthead("Error Loading Region File").
-                    message("Could not read region file. "
-                            + "See exception below.").
-                            styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    readError.showException(e.getSource().getException());
-                }
-
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("Error Loading Region File");
+                alert.setContentText("Could not read region file. "
+                            + "See exception below.");
+                alert.showAndWait();
+    }       
+                
             });
             cancelButton.setOnAction(new EventHandler<ActionEvent>(){
                @Override
@@ -1395,7 +1837,7 @@ public class AutoPrimer3A extends Application implements Initializable{
             new Thread(loadFileTask).start();
         }
     }
-    
+        
     public void clearRegions(){
         regionsTextArea.clear();
         if (! progressLabel.textProperty().isBound()){
@@ -1429,15 +1871,16 @@ public class AutoPrimer3A extends Application implements Initializable{
             }
         }
         if (regions.isEmpty()){
-            Dialogs noRegions = Dialogs.create().title("No Regions").
-                        masthead("No valid regions found.").
-                        message("No valid regions were found in your "
-                                + "input.")
-                        .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                        noRegions.showError();       
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("No Regions");
+                            alert.setHeaderText("No valid regions found.");
+                            alert.setContentText(
+                            "No valid regions were found in your " + "input.");
+                            // Show the alert dialog
+                            alert.showAndWait();    
             return null;
         }
-
+        
         if (invalidRegions.size() > 0){
             StringBuilder mh = new StringBuilder("Found " + 
                     invalidRegions.size() + " Invalid Region");
@@ -1455,14 +1898,23 @@ public class AutoPrimer3A extends Application implements Initializable{
                     append((invalidRegions.size() - 9)).
                     append("more.");
             }
-            Action response = Dialogs.create().title("Invalid Regions").
-                    masthead(mh.toString()).
-                    message(msg.toString()).
-                    actions(Dialog.ACTION_YES, Dialog.ACTION_NO).
-                    styleClass(Dialog.STYLE_CLASS_NATIVE).
-                    showConfirm();
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Invalid Regions");
+                alert.setHeaderText(mh.toString());
+                alert.setContentText(msg.toString());
 
-            if (response == Dialog.ACTION_NO){
+                // Add Yes and No buttons
+                ButtonType yesButton = new ButtonType("Yes", ButtonBar.ButtonData.YES);
+                ButtonType noButton = new ButtonType("No", ButtonBar.ButtonData.NO);
+                alert.getButtonTypes().setAll(yesButton, noButton);
+
+                // Show the dialog and capture the response
+                Optional<ButtonType> response = alert.showAndWait();
+
+                if (response.isPresent() && response.get() == yesButton) {
+                // Handle Yes action
+                System.out.println("User chose YES");
+                } else {             
                 setRunning(false);
                 progressIndicator.progressProperty().unbind();
                 progressLabel.textProperty().unbind();        
@@ -1471,7 +1923,7 @@ public class AutoPrimer3A extends Application implements Initializable{
                 return null;
             }
         }
-
+        
         ArrayList<GenomicRegionSummary> tooLong = new ArrayList<>();
         ArrayList<GenomicRegionSummary> passed = new ArrayList<>();
         for (GenomicRegionSummary r : regions){
@@ -1503,25 +1955,35 @@ public class AutoPrimer3A extends Application implements Initializable{
                     append((tooLong.size() - 9)).
                     append("more.");
             }
-            Action response = Dialogs.create().title("Invalid Regions").
-                    masthead(mh.toString()).
-                    message(msg.toString()).
-                    actions(Dialog.ACTION_YES, Dialog.ACTION_NO).
-                    styleClass(Dialog.STYLE_CLASS_NATIVE).
-                    showConfirm();
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Invalid Regions");
+            alert.setHeaderText(mh.toString());
+            alert.setContentText(msg.toString());
+            // Add Yes and No buttons
+            ButtonType yesButton = new ButtonType("Yes", ButtonBar.ButtonData.YES);
+            ButtonType noButton = new ButtonType("No", ButtonBar.ButtonData.NO);
+            alert.getButtonTypes().setAll(yesButton, noButton);
 
-            if (response == Dialog.ACTION_NO){
-                setRunning(false);
+            // Show the dialog and capture the response
+            Optional<ButtonType> response = alert.showAndWait();
+
+            if (response.isPresent() && response.get() == yesButton) {
+            // Handle Yes action
+            System.out.println("User chose YES");
+            } else {
+            // Handle No action
+            setRunning(false);
                 progressIndicator.progressProperty().unbind();
                 progressLabel.textProperty().unbind();        
                 progressLabel.setText("Design cancelled");
                 progressIndicator.progressProperty().set(0);
                 return null;
-            }
+            
         }
+            
         return passed;
     }
-    
+        
     public void designPrimersToCoordinates(){
         final String regionsInput = regionsTextArea.getText();
         final int optSize = Integer.valueOf(splitRegionsTextField.getText());
@@ -1579,15 +2041,15 @@ public class AutoPrimer3A extends Application implements Initializable{
                     Platform.runLater(new Runnable() {
                         @Override
                         public void run() {
-                            Dialogs seqError = 
-                                    Dialogs.create().title("Error").
-                                    masthead("Error retrieving DNA").
-                                    message("Exception encountered while retrieving DNA for"
-                                            + " region " + rString + ". See below:")
-                                    .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                                seqError.showException(seqex);
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Error retrieving DNA");
+                    alert.setContentText("Exception encountered while retrieving DNA for"
+                                            + " region " + rString + ". See below:");
+                    alert.showAndWait();
+    }
                         }
-                    });
+                    );
                     return null;
                 }
                 updateProgress(++p, regions.size() * 3);
@@ -1620,7 +2082,7 @@ public class AutoPrimer3A extends Application implements Initializable{
                     }else if (excludeStart < dna.length() - 1 ){
                         int diff = dna.length() -1 - excludeStart;
                         excludeRegions.add(excludeStart + "," + diff);
-                    }
+                    
                 }
                 //get info from text fields for primer3 options
                 String target = Integer.toString(flanks - designBuffer - 1) + 
@@ -1669,22 +2131,25 @@ public class AutoPrimer3A extends Application implements Initializable{
                     return;
                 }
                 if (result.get("primers").isEmpty()){
-                    progressLabel.setText("No primers designed.");
-                    Dialogs noPrimersError = Dialogs.create().title("No PrimersFound").
-                        masthead("No primers found for your targets.").
-                        message("No primer designs were attempted for your targets")
-                        .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                        noPrimersError.showError();       
+                    progressLabel.setText("No primers designed");
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("No primers found.");
+                        alert.setHeaderText("No primers found for your targets.");
+                        alert.setContentText("No primer designs were attempted for your targets");
+                        alert.showAndWait();  
+                        }                    
                         progressIndicator.progressProperty().set(0);
                     return;
                 }
-                if (result.get("design").isEmpty()){
+                 if (result.get("design").isEmpty()){
                     progressLabel.setText("No primers designed.");
-                    Dialogs noPrimersError = Dialogs.create().title("No PrimersFound").
-                        masthead("No primers found for your targets.").
-                        message("No primer designs were attempted for your targets")
-                        .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    noPrimersError.showError();       
+                    
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("No primers found.");
+                        alert.setHeaderText("No primers found for your targets.");
+                        alert.setContentText("No primer designs were attempted for your targets");
+                        alert.showAndWait();  
+                        }    
                     progressIndicator.progressProperty().set(0);
                     return;
                 }
@@ -1715,14 +2180,15 @@ public class AutoPrimer3A extends Application implements Initializable{
                     tableStage.initModality(Modality.NONE);
                     tableStage.show();
                }catch (Exception ex){
-                    Dialogs displayError = Dialogs.create().title("Error").
-                        masthead("Error Displaying Design Results").
-                        message("Internal error displaying primer design"
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText("Error Displaying Design Results");
+                        alert.setContentText("Internal error displaying primer design"
                                 + " results in a new window."
-                                + "See exception below.").
-                                styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    displayError.showException(ex);
-                    //ex.printStackTrace();
+                                + "See exception below.");
+                        alert.showAndWait();  
+                        }    
+                    ex.printStackTrace();
                }
             }
         });
@@ -1747,22 +2213,44 @@ public class AutoPrimer3A extends Application implements Initializable{
                 progressIndicator.progressProperty().unbind();
                 progressIndicator.progressProperty().set(0);
                 if (e.getSource().getException() instanceof SQLException){
-                    Dialogs sqlError = Dialogs.create().title("SQL Error").
-                        masthead("Error Retrieving SNPs").
-                        message("Failed to retrieve SNPs from UCSC. "
-                                + "See exception below.").
-                                styleClass(Dialog.STYLE_CLASS_NATIVE);
-                        sqlError.showException(e.getSource().getException());
+                
                 }
-                Dialogs designErr = Dialogs.create().title("Error").
-                    masthead("Design Failed!").
-                    message("AutoPrimer3A encountered an error designing "
-                    + "primers to your targets. See exception below.").
-                    styleClass(Dialog.STYLE_CLASS_NATIVE);
-                designErr.showException(e.getSource().getException());
-            }
+                    import javafx.scene.control.Alert;
+                import javafx.scene.control.Alert.AlertType;
 
-        });
+                try {
+                // Your logic that might throw an exception
+                } catch (Exception e) {
+                // SQL Error Dialog
+                Alert sqlError = new Alert(AlertType.ERROR);
+                sqlError.setTitle("SQL Error");
+                sqlError.setHeaderText("Error Retrieving SNPs");
+                sqlError.setContentText("Failed to retrieve SNPs from UCSC. See exception below.");
+    
+                // Optional: Add expandable content for exception details
+                String exceptionText = e.getCause() != null ? e.getCause().toString() : e.toString();
+                TextArea exceptionDetails = new TextArea(exceptionText);
+                exceptionDetails.setEditable(false);
+                exceptionDetails.setWrapText(true);
+
+                sqlError.getDialogPane().setExpandableContent(exceptionDetails);
+                sqlError.showAndWait();
+    
+                // Design Error Dialog
+                Alert designErr = new Alert(AlertType.ERROR);
+                designErr.setTitle("Error");
+                designErr.setHeaderText("Design Failed!");
+                designErr.setContentText("AutoPrimer3A encountered an error designing primers to your targets. See exception below.");
+
+                exceptionText = e.getCause() != null ? e.getCause().toString() : e.toString();
+                exceptionDetails = new TextArea(exceptionText);
+                exceptionDetails.setEditable(false);
+                exceptionDetails.setWrapText(true);
+
+                designErr.getDialogPane().setExpandableContent(exceptionDetails);
+                designErr.showAndWait();
+                }
+                    });
         cancelButton.setOnAction(new EventHandler<ActionEvent>(){
            @Override
            public void handle(ActionEvent actionEvent){
@@ -1779,13 +2267,14 @@ public class AutoPrimer3A extends Application implements Initializable{
         if (Integer.valueOf(flankingRegionsTextField.getText())
                 <= (Integer.valueOf(minDistanceTextField.getText()) 
                 + Integer.valueOf(maxSizeTextField.getText()))){
-            Dialogs flanksError = Dialogs.create().title("Flanks Error").
-                    masthead("Invalid values for 'Min distance'/"
-                            + "'Flanking region' fields.").
-                    message("Flanking region value must be greater than Min "
-                            + "distance value  plus maximum primer size.")
-                    .styleClass(Dialog.STYLE_CLASS_NATIVE);
-            flanksError.showError();
+        		Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setTitle("Flanks Error");
+			alert.setHeaderText("Invalid values for 'Min distance'/"
+                            + "'Flanking region' fields.");
+			alert.setContentText("Flanking region value must be greater than Min "
+                            + "distance value  plus maximum primer size.");
+			alert.showAndWait();
+				}    
             return false;
         }
         
@@ -1802,6 +2291,15 @@ public class AutoPrimer3A extends Application implements Initializable{
         
         if (Integer.valueOf(maxSizeTextField.getText()) < 
                 Integer.valueOf(optSizeTextField.getText())){
+            
+            
+            
+            
+            
+            
+            
+            
+            
             Dialogs sizeError = Dialogs.create().title("Primer Size Error").
                     masthead("Invalid values for primer size fields.").
                     message("Max Primer Size can not be less than Opt "
@@ -1840,18 +2338,18 @@ public class AutoPrimer3A extends Application implements Initializable{
         //check that we've got at least one gene in our input box
         if (!genesTextField.getText().matches(".*\\w.*")){
             return;//TO DO show ERROR dialog maybe
-        }
+        
         resetEmptyPrimerSettings();
         if (!checkSizeRange(sizeRangeTextField)){
             displaySizeRangeError();
             return;
-        }
+        
         final int optSize = Integer.valueOf(splitRegionsTextField.getText());
         final int flanks = Integer.valueOf(flankingRegionsTextField.getText());
         final int designBuffer = Integer.valueOf(minDistanceTextField.getText());
         if (! checkDesignParameters()){
             return;
-        }
+        
                             
         setRunning(true);
         final Task<GeneSearchResult> geneSearchTask = 
@@ -1864,9 +2362,9 @@ public class AutoPrimer3A extends Application implements Initializable{
                 if (geneSearcher == null){
                     updateMessage("Connection failed.");
                     return null;
-                }
-                updateMessage("Connection succeeded.");
                 
+                updateMessage("Connection succeeded.");
+
                 LinkedHashSet<String> searchStrings = new LinkedHashSet<>();
                 Collections.addAll(searchStrings, genesTextField.getText().split("\\s+"));
                 LinkedHashSet<String> notFound = new LinkedHashSet<>();
@@ -1887,7 +2385,7 @@ public class AutoPrimer3A extends Application implements Initializable{
                         Logger.getLogger(AutoPrimer3A.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (GetGeneCoordinates.GetGeneFromSymbolException ex) {
                         Logger.getLogger(AutoPrimer3A.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    
                     if (found.isEmpty()){
                         notFound.add(s);
                     }else{
@@ -1900,11 +2398,11 @@ public class AutoPrimer3A extends Application implements Initializable{
                                     targets.add(f);
                                 }else{
                                     nonCodingTargets.add(f.getId());
-                                }
+                                
                             }
                             if (! matched){
                                 notFound.add(s);
-                            }
+                            
                         }else{
                             targets.addAll(found);
                         }
@@ -1913,7 +2411,7 @@ public class AutoPrimer3A extends Application implements Initializable{
                 return new GeneSearchResult(targets, notFound, nonCodingTargets,
                         geneSearcher);
             }
-         };
+         }
         
         geneSearchTask.setOnSucceeded(new EventHandler<WorkerStateEvent>(){
             @Override
@@ -1954,6 +2452,12 @@ public class AutoPrimer3A extends Application implements Initializable{
                                 + ".\n\n");
                     }
                     message.append("Continue anyway?");
+                    
+                    
+                    
+                    
+                    
+                    
                     Action response = Dialogs.create().title("").
                             masthead("Could Not Find Some Genes").
                             message(message.toString()).
@@ -1962,6 +2466,12 @@ public class AutoPrimer3A extends Application implements Initializable{
                             showConfirm();
 
                     if (response == Dialog.ACTION_NO){
+                    
+                        
+                        
+                        
+                        
+                        
                         setRunning(false);
                         progressIndicator.progressProperty().unbind();
                         progressLabel.textProperty().unbind();        
@@ -2024,16 +2534,25 @@ public class AutoPrimer3A extends Application implements Initializable{
                                 Platform.runLater(new Runnable() {
                                         @Override
                                         public void run() {
-                                            
-                                            Dialogs seqError = 
-                                                Dialogs.create().title("Error").
-                                                masthead("Error retrieving DNA").
-                                                message("Exception encountered while retrieving DNA for"
+                                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText("Error retrieving DNA");
+                        alert.setContentText("Exception encountered while retrieving DNA for"
                                                         + " region " + rString + " for gene " 
-                                                        + rName + ". See below:")
-                                                .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                                            seqError.showException(seqex);
-                                        }
+                                                        + rName + ". See below:");
+                        alert.showAndWait();  
+                        }     
+                            
+                                            
+                                            
+                                            
+                                            
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
                                 });
                                 return null;
                             }
@@ -2206,6 +2725,7 @@ public class AutoPrimer3A extends Application implements Initializable{
                 progressIndicator.progressProperty().unbind();
                 progressIndicator.progressProperty().bind(designTask.progressProperty());
                 progressLabel.textProperty().bind(designTask.messageProperty());
+
                 designTask.setOnSucceeded(new EventHandler<WorkerStateEvent>(){
                     @Override
                     public void handle (WorkerStateEvent e){
@@ -2214,28 +2734,41 @@ public class AutoPrimer3A extends Application implements Initializable{
                         progressLabel.textProperty().unbind();
                         setRunning(false);
                         HashMap<String, ArrayList> result = 
+
                                 (HashMap<String, ArrayList>) e.getSource().getValue();
                         if (result == null){
                             return;
                         }
                         if (result.get("primers").isEmpty()){
                             progressLabel.setText("No primers designed.");
-                            Dialogs noPrimersError = Dialogs.create().title("No PrimersFound").
-                                masthead("No primers found for your targets.").
-                                message("No primer designs were attempted for your targets")
-                                .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                                noPrimersError.showError();       
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("No primers found!");
+                        alert.setHeaderText("No primers found for your targets.");
+                        alert.setContentText("No primer designs were attempted for your targets");
+                        alert.showAndWait();  
+                        } 
+                            
+                            
+                            
+                               
+                            
+                                
+                                
+                                
+                                
+                                
                                 progressIndicator.progressProperty().set(0);
                             return;
                         }
                         if (result.get("design").isEmpty()){
                             progressLabel.setText("No primers designed.");
-                            Dialogs noPrimersError = Dialogs.create().title("No PrimersFound").
-                                masthead("No primers found for your targets.").
-                                message("No primer designs were attempted for your targets")
-                                .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                            noPrimersError.showError();       
-                            progressIndicator.progressProperty().set(0);
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("No primers found!");
+                        alert.setHeaderText("No primers found for your targets.");
+                        alert.setContentText("No primer designs were attempted for your targets");
+                        alert.showAndWait();  
+                        } 
+                           progressIndicator.progressProperty().set(0);
                             return;
                         }
                         progressLabel.setText(result.get("primers").size() +
@@ -2265,69 +2798,84 @@ public class AutoPrimer3A extends Application implements Initializable{
                                     .getResourceAsStream("icon.png")));
                             tableStage.initModality(Modality.NONE);
                             tableStage.show();
-                       }catch (Exception ex){
-                           Dialogs designErr = Dialogs.create().title("Error").
-                                masthead("Design Failed!").
-                                message("AutoPrimer3A encountered an error designing "
-                                + "attempting to display your results. See exception below.").
-                                styleClass(Dialog.STYLE_CLASS_NATIVE);
-                            designErr.showException(ex);
-                            ex.printStackTrace();
-                       }
-                    }
-                });
+                       }catch (Exception ex)
+                       {
+                        
+                           Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText("Design Failed!");
+                        alert.setContentText("AutoPrimer3A encountered an error designing "
+                                + "attempting to display your results. See exception below.");
+                        alert.showAndWait();       
+                   }
+                
+            });
+                
                 designTask.setOnCancelled(new EventHandler<WorkerStateEvent>(){
+                    
                     @Override
+                    
                     public void handle (WorkerStateEvent e){
+                        
                         setRunning(false);
                         progressLabel.textProperty().unbind();
                         progressLabel.setText("Design cancelled");
                         progressIndicator.progressProperty().unbind();
                         progressIndicator.progressProperty().set(0);
                     }
-
-                });
+                }
+        }
                 designTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
+                
                     @Override
+                    
                     public void handle (WorkerStateEvent e){
-                        setRunning(false);
+                    
+                    setRunning(false);
                         progressLabel.textProperty().unbind();
                         progressLabel.setText("Design failed!");
                         progressIndicator.progressProperty().unbind();
                         progressIndicator.progressProperty().set(0);
+                    }
                         if (e.getSource().getException() instanceof SQLException){
-                            Dialogs sqlError = Dialogs.create().title("SQL Error").
-                                masthead("Error Retrieving Genes/SNPs").
-                                message("Failed to retrieve information from UCSC. "
-                                        + "See exception below.").
-                                        styleClass(Dialog.STYLE_CLASS_NATIVE);
-                                sqlError.showException(e.getSource().getException());
+                        
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText("Error Retrieving Genes/SNPs");
+                        alert.setContentText("Failed to retrieve information from UCSC. "
+                                        + "See exception below.");
+                        alert.showAndWait();                           
+                        
                         }else{
-                            Dialogs designErr = Dialogs.create().title("Error").
-                                masthead("Design Failed!").
-                                message("AutoPrimer3A encountered an error designing "
-                                + "primers to your targets. See exception below.").
-                                styleClass(Dialog.STYLE_CLASS_NATIVE);
-                            designErr.showException(e.getSource().getException());
-                        }
-                    }
+                        
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText("Design Failed!");
+                        alert.setContentText("AutoPrimer3A encountered an error designing "
+                                + "primers to your targets. See exception below.");
+                        alert.showAndWait();
+                }         
+                  }
+                }
 
-                });
-                cancelButton.setOnAction(new EventHandler<ActionEvent>(){
-                   @Override
-                   public void handle(ActionEvent actionEvent){
-                        designTask.cancel();
+                cancelButton.setOnAction(new EventHandler<ActionEvent>()){
+                   
+                    @Override
+                   
+                    public void handle(ActionEvent actionEvent){
+                    
+                    designTask.cancel();
                     }
-                });
+                
                 setRunning(true);
-                new Thread(designTask).start();
-            }
 
-            
-
-        });
-        
-        geneSearchTask.setOnCancelled(new EventHandler<WorkerStateEvent>(){
+                }
+                
+new Thread(designTask).start();
+            }    
+                }
+        geneSearchTask.setOnCancelled(new EventHandler<WorkerStateEvent>()){
+                }
             @Override
             public void handle (WorkerStateEvent e){
                 setRunning(false);
@@ -2338,23 +2886,24 @@ public class AutoPrimer3A extends Application implements Initializable{
             }
 
         });
-        geneSearchTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
-            @Override
+        geneSearchTask.setOnFailed(new EventHandler<WorkerStateEvent>()){
+            
+                    @Override
             public void handle (WorkerStateEvent e){
                 setRunning(false);
                 progressLabel.textProperty().unbind();
                 progressLabel.setText("Search failed!");
                 progressIndicator.progressProperty().unbind();
                 progressIndicator.progressProperty().set(0);
-                Dialogs searchErr = Dialogs.create().title("Error").
-                    masthead("Gene Search Failed!").
-                    message("AutoPrimer3A encountered an error when searching "
-                    + "for gene targets. See exception below.").
-                    styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    searchErr.showException(e.getSource().getException());
-            }
-
-        });
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText("Gene Search Failed!");
+                        alert.setContentText("AutoPrimer3A encountered an error when searching "
+                    + "for gene targets. See exception below.");
+                        alert.showAndWait();
+                }        
+ 
+        );
         cancelButton.setOnAction(new EventHandler<ActionEvent>(){
            @Override
            public void handle(ActionEvent actionEvent){
@@ -2369,9 +2918,11 @@ public class AutoPrimer3A extends Application implements Initializable{
         new Thread(geneSearchTask).start();   
     
     }
-    
-    private String createReferenceSequence(String dna, int offset, int flanks,
+            
+    private String createReferenceSequence(String dna, int offset, int flanks);
+            
             ArrayList<GenomicRegionSummary> exons, boolean revComp){
+        
         StringBuilder dnaTarget = new StringBuilder();
         int prevEnd = 0;
         for (int i = 0; i < exons.size(); i++){
@@ -2576,7 +3127,7 @@ public class AutoPrimer3A extends Application implements Initializable{
         return String.join("/", merged);
     }
 
-    
+
     //create a new name from two genomic regions' names
     private String mergeNames(String name1, String name2){
         String name;
@@ -2782,9 +3333,10 @@ public class AutoPrimer3A extends Application implements Initializable{
             return start;
         }else{
             return 0;
-        }
+        
     }
-    /*this method gets the end coordinates of a gene based on 
+}
+/*this method gets the end coordinates of a gene based on 
     the values for the designToChoiceBox and the Flanking region choice box
     */
         
@@ -2797,7 +3349,7 @@ public class AutoPrimer3A extends Application implements Initializable{
         }
         end += flanks;
         return end;
-    }
+}    
 
     private GetGeneCoordinates getGeneSearcher(){
         if (databaseChoiceBox.getSelectionModel().getSelectedItem().equals("refGene") 
@@ -2809,9 +3361,9 @@ public class AutoPrimer3A extends Application implements Initializable{
             return new GetEnsemblGeneCoordinates();
         }else{
             return null;
-        }
-    }
+}               
     
+    }    
     private ArrayList<GeneDetails> getGeneDetails(String searchString, 
             GetGeneCoordinates geneSearcher) 
             throws SQLException, GetGeneCoordinates.GetGeneExonException, GetGeneCoordinates.GetGeneFromIDException, GetGeneCoordinates.GetGeneFromSymbolException{
@@ -2830,7 +3382,7 @@ public class AutoPrimer3A extends Application implements Initializable{
                 genes.addAll(geneSearcher.getGeneFromSymbol(searchString, 
                         (String) genomeChoiceBox.getSelectionModel().getSelectedItem(),
                         (String) databaseChoiceBox.getSelectionModel().getSelectedItem()));
-            }
+}           
             
         }else if (databaseChoiceBox.getSelectionModel().getSelectedItem().equals("knownGene")){
             if (searchString.matches("uc\\d{3}[a-z]{3}\\.\\d")){
@@ -2843,8 +3395,10 @@ public class AutoPrimer3A extends Application implements Initializable{
                 genes.addAll(geneSearcher.getGeneFromSymbol(searchString, 
                         (String) genomeChoiceBox.getSelectionModel().getSelectedItem(),
                         (String) databaseChoiceBox.getSelectionModel().getSelectedItem()));
-            }
-        }else if (databaseChoiceBox.getSelectionModel().getSelectedItem().equals("ensGene")){
+            
+        }
+            {
+            else if (databaseChoiceBox.getSelectionModel().getSelectedItem().equals("ensGene")){
             if (searchString.matches("ENS\\w*T\\d{11}.*\\d*")){
                 //is accession
                 genes.addAll(geneSearcher.getGeneFromId(searchString, 
@@ -2855,137 +3409,33 @@ public class AutoPrimer3A extends Application implements Initializable{
                 genes.addAll(geneSearcher.getGeneFromSymbol(searchString, 
                         (String) genomeChoiceBox.getSelectionModel().getSelectedItem(),
                         (String) databaseChoiceBox.getSelectionModel().getSelectedItem()));
-            }
-        }
-                /*if (t.equals("refGene") || t.equals("knownGene") || 
+            
+        
+
+/*if (t.equals("refGene") || t.equals("knownGene") || 
                             t.equals("ensGene") || t.equals("xenoRefGene"))*/
         for (int i = 0; i < genes.size(); i++){
             System.out.println(genes.get(i).getSymbol() + ":" + genes.get(i).getId()
                      + ":" + genes.get(i).getChromosome() + ":" + genes.get(i).getTxStart()
                      + "-" + genes.get(i).getTxEnd());
-        }
+                    }
         return genes;
-    }
-    
-    public Boolean getCanRun(){
+        }   
+                        
+    public Boolean 
+        getCanRun(){
         return CANRUN;
-    }
+    }  /**
+ * The main() method
+  */
+import javafx.application.Application;
+import javafx.stage.Stage;
 
-    private void setCanRun(boolean designable){
-        CANRUN = designable;
-        runButton.setDisable(!CANRUN);
-        cancelButton.setDisable(CANRUN);
-        runButton2.setDisable(!CANRUN);
-        cancelButton2.setDisable(CANRUN);
+public class MainApp extends Application {
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("Hello JavaFX");
+        primaryStage.show();    }
+public static void main(String[] args) {
+        launch(args);
     }
-    
-    private void setRunning(boolean running){
-        setCanRun(!running);
-        refreshButton.setDisable(running);
-        refreshMenuItem.setDisable(running);
-        genomeChoiceBox.setDisable(running);
-        genomeChoiceBox2.setDisable(running);
-        databaseChoiceBox.setDisable(running);
-        snpsChoiceBox.setDisable(running);
-        snpsChoiceBox2.setDisable(running);
-        designToChoiceBox.setDisable(running);
-        minDistanceTextField.setDisable(running);
-        minDistanceTextField2.setDisable(running);
-        flankingRegionsTextField.setDisable(running);
-        flankingRegionsTextField2.setDisable(running);
-        genesTextField.setDisable(running);
-        refreshButton.setDisable(running);
-        loadFileButton.setDisable(running);
-    }
-    
-    private void setLoading(boolean loading){
-        setCanRun(!loading);
-        setRunning(loading);
-        if (loading){
-            progressIndicator.setProgress(-1);
-        }else{
-            progressIndicator.setProgress(0);
-        }
-    }
-    
-    public void showHelp(){
-        try{
-            File instructionsPdf = File.createTempFile("autoprimer3_instructions", ".pdf" );
-            instructionsPdf.deleteOnExit();
-            InputStream inputStream = this.getClass().
-                    getResourceAsStream("instructions.pdf");
-            OutputStream outputStream = new FileOutputStream(instructionsPdf);
-            int read = 0;
-            byte[] bytes = new byte[1024];    
-            while ((read = inputStream.read(bytes)) != -1) {
-                    outputStream.write(bytes, 0, read);
-            }
-            inputStream.close();
-            outputStream.close();
-            openFile(instructionsPdf);
-        }catch(IOException ex){
-            Action openFailed = Dialogs.create().title("Open failed").
-                    masthead("Could not open instructions PDF").
-                    message("Exception encountered when attempting to open "
-                            + "AutoPrimer3A's help pdf. See below:").
-                    styleClass(Dialog.STYLE_CLASS_NATIVE).
-                    showException(ex);
-        }
-    }
-    
-    private void openFile(File f) throws IOException{
-        String command;
-        //Desktop.getDesktop().open(f);
-        if (System.getProperty("os.name").equals("Linux")) {
-            command = "xdg-open " + f;
-        }else if (System.getProperty("os.name").equals("Mac OS X")) {
-            command = "open " + f;
-        }else if (System.getProperty("os.name").contains("Windows")){
-            command = "cmd /C start " + f;
-        }else {
-            return;
-        }
-        Runtime.getRuntime().exec(command);
-    }
-    
-    public void showAbout(Event ev){
-        try{
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("about.fxml"));
-            Pane page = (Pane) loader.load();
-            Scene scene = new Scene(page);
-            Stage stage = new Stage();
-            stage.setScene(scene);
-            //scene.getStylesheets().add(AutoPrimer3A.class
-            //            .getResource("autoprimer3A.css").toExternalForm());
-            AboutController controller = loader.getController();
-            controller.setVersion(VERSION);
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.getIcons().add(new Image(this.getClass().
-                    getResourceAsStream("icon.png")));
-            stage.setTitle("About AutoPrimer3A");
-            
-            stage.show();
-        }catch(IOException ex){
-            Dialogs aboutError = Dialogs.create().title("Error").
-                masthead("Could not display about dialog").
-                message("Please see exception for details.").
-                styleClass(Dialog.STYLE_CLASS_NATIVE);
-            aboutError.showException(ex);
-                    
-        }
-    }
-    
-    /**
-     * The main() method is ignored in correctly deployed JavaFX application.
-     * main() serves only as fallback in case the application can not be
-     * launched through deployment artifacts, e.g., in IDEs with limited FX
-     * support. NetBeans ignores main().
-     *
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        Application.launch(AutoPrimer3A.class, (java.lang.String[])null);
-    }
-    
-}
-

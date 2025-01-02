@@ -24,7 +24,6 @@ import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
-import org.dom4j.QName;
 import org.dom4j.io.SAXReader;
 
 /**
@@ -33,7 +32,7 @@ import org.dom4j.io.SAXReader;
  */
 public class SequenceFromDasUcsc {
     HashMap<String, String> buildToMapMaster = new HashMap<>();//maps build name to url e.g. hg19 => http://genome.cse.ucsc.edu:80/cgi-bin/das/hg19
-    SequenceFromDasUcsc(){//get build names and DAS urls
+    SequenceFromDasUcsc() throws DocumentException{//get build names and DAS urls
         try{
             SAXReader reader = new SAXReader();
             URL url = new URL("http://genome.ucsc.edu/cgi-bin/das/dsn");//usa    
@@ -48,7 +47,7 @@ public class SequenceFromDasUcsc {
                 Element mapmaster = dsn.element("MAPMASTER");
                 buildToMapMaster.put(build.getValue(), mapmaster.getText());
             }
-        }catch (DocumentException|MalformedURLException ex){
+        }catch (MalformedURLException ex){
             //TO DO - handle (throw) this error properly
             ex.printStackTrace();
         }

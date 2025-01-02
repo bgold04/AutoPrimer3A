@@ -5,8 +5,7 @@
         <group>
             <file>file:/Users/bgold/AutoPrimer3A/src/com/github/autoprimer3A/Primer3ResultViewController.java</file>
             <file>file:/Users/bgold/AutoPrimer3A/src/com/github/autoprimer3A/AutoPrimer3A.java</file>
-            <file>jar:file:/Users/bgold/AutoPrimer3A/lib/openjfx-10.21.24.jar!/org/controlsfx/dialog/Dialogs.java</file>
-            <file>jar:file:/Users/bgold/AutoPrimer3A/lib/openjfx-10.21.24.jar!/org/controlsfx/dialog/Dialog.java</file>
+            <file>file:/Users/bgold/AutoPrimer3A/src/com/github/autoprimer3A/SequenceFromDasUcsc.java</file>
         </group>
     </open-files>
 </project-private>

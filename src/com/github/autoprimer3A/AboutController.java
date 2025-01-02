@@ -2,7 +2,7 @@
  * AutoPrimer3A
  * derived from Copyright (C) 2013,2014 David A. Parry under GPL3
  * d.a.parry@leeds.ac.uk with revisions by Bert Gold bgold04@gmail.com
- * https://github.com/gantzgraf/autoprimer3A
+ * https://github.com/bgold04/AutoPrimer3A
  * 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
