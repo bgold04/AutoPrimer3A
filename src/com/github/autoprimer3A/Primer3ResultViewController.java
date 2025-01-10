@@ -50,6 +50,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Hyperlink;
@@ -83,6 +84,10 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.common.usermodel.HyperlinkType;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Hyperlink;
+
 
 /**
  * FXML Controller class
@@ -91,7 +96,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class Primer3ResultViewController implements Initializable {
 
-    public String build;    
+public String build;    
 public Integer cdsEnd;
 public Integer cdsStart;
 public String chrom;
@@ -140,6 +145,8 @@ public String t;
 public String regions;
 public Object document;
 public Object node;
+public String inf;
+public Object wFile;
     
     
    @FXML
@@ -214,29 +221,23 @@ public class FileHandler {
         // Show the dialog and capture the user's response
         Optional<ButtonType> result = confirmAlert.showAndWait();
         
-        if (result.isPresent() && result.ifPresent() == yesButton) {
-            try {
-                openFile(file);
-            } catch (IOException ex) {
-                // Show an error dialog if opening the file fails
-                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-                errorAlert.setTitle("Open Failed");
-                errorAlert.setHeaderText("Could not open output file");
-                errorAlert.setContentText(
-                    "An exception was encountered when attempting to open the saved file. See details below:\n\n" +
-                    ex.getMessage()
-                );
-                errorAlert.showAndWait();
-                ex.printStackTrace(); // Log the exception for debugging
-            }
-        }
+      if (result.isPresent() && result.get() == yesButton) {
+    try {
+        openFile(file);
+    } catch (IOException ex) {
+        // Show an error dialog if opening the file fails
+        Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+        errorAlert.setTitle("Open Failed");
+        errorAlert.setHeaderText("Could not open output file");
+        errorAlert.setContentText(
+            "An exception was encountered when attempting to open the saved file. See details below:\n\n" +
+            ex.getMessage()
+        );
+        errorAlert.showAndWait();
+        ex.printStackTrace(); // Log the exception for debugging
     }
-    public boolean isOptionalPresent(Optional<?> optional) {
-    return optional != null && optional.isPresent(); 
+}
     }
-
-
-    
     public void openFile(File file) throws IOException {
         if (!file.exists()) {
             throw new FileNotFoundException("File does not exist: " + file.getAbsolutePath());
@@ -367,370 +368,115 @@ writeFileMenuItem.setOnAction(new EventHandler<ActionEvent>() {
                     }
     }
         
+private void openFile(File file) throws IOException {
+    if (file == null) {
+        throw new IllegalArgumentException("File cannot be null");
+    }
 
-        private void writeDesignToFile() throws IOException{        
-        if (designTextSummary.getText().isEmpty()){
-        
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Nothing to save");
-        alert.setHeaderText("No designs to save");
-        alert.setContentText(
-        "No primer designs were made, no file can be saved."
-        );
+    if (!file.exists()) {
+        throw new FileNotFoundException("File does not exist: " + file.getAbsolutePath());
+    }
 
-        // Show the alert dialog
-        alert.showAndWait();            
-             return;
-        }
-       FileChooser fileChooser = new FileChooser();
-       fileChooser.getExtensionFilters().add(
-               new FileChooser.ExtensionFilter("Text  (*.txt)", "*.txt"));
-       fileChooser.setTitle("Write primer designs to file...");
-       fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
-       File wFile = fileChooser.showSaveDialog(resultPane.getScene().getWindow());
-       if (wFile == null){
-           return;
-       }else if (!wFile.getName().endsWith(".txt")){
-            //annoying bug with filechooser means extension might not be appended
-            wFile = new File(wFile.getAbsolutePath() + ".txt");
-       }
-        String des[] = designTextSummary.getText().split("\n");//want platform agnostic newlines
-        FileWriter fw = new FileWriter(wFile.getAbsoluteFile());
-        BufferedWriter bw = new BufferedWriter(fw);
-        for (String d: des){
-            bw.write(d);
-            bw.newLine();
-        }
-        bw.close();
-        
-        // Display a confirmation dialog
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Done");
-        confirmAlert.setHeaderText("Finished writing");
-        confirmAlert.setContentText(
-            "Primer designs successfully written to " + wFile.getAbsolutePath() +
-            "\n\nDo you want to open this file now?"
-        );
-        // Add Yes and No buttons to the dialog
-        ButtonType yesButton = new ButtonType("Yes", ButtonBar.ButtonData.YES);
-        ButtonType noButton = new ButtonType("No", ButtonBar.ButtonData.NO);
-
-        // Create the confirmation dialog
-        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("File Confirmation");
-        confirmAlert.setHeaderText("Do you want to open the file?");
-        confirmAlert.setContentText("The file was successfully created. Would you like to open it now?");
-        confirmAlert.getButtonTypes().setAll(yesButton, noButton);
-        
-        // Check the user's response
-        //if (result.isPresent() && result.get() == yesButton) {
-        //File file = new File(wFile.getAbsolutePath()); // Replace wFile with the actual variable or path
-
-        //if (!file.exists()) {
-        // If the file does not exist, throw an exception
-        //throw new FileNotFoundException("File does not exist: " + file.getAbsolutePath());
-        //}
-        
-        // Check the user's response without using isPresent() or get()
-        // Check the user's response without using `ifPresent` or `get()`
-if (result.isPresent()) {
-    ButtonType response = result.orElse(ButtonType.CANCEL); // Default to CANCEL if result is empty
-    if (response == yesButton) {
-        // Ensure the file path is valid
-        File file = new File(wFile.getAbsolutePath()); // Replace `wFile` with the correct variable
-
-        if (!file.exists()) {
-            // If the file does not exist, throw a specific exception
-            throw new RuntimeException("File does not exist: " + file.getAbsolutePath());
-        }
-
-        // Proceed with opening the file
-        try {
-            openFile
-        (wFile); // Ensure `openFile` matches your implementation
-        } catch (IOException ex) {
-            // Display error dialog if opening the file fails
-            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-            errorAlert.setTitle("Open Failed");
-            errorAlert.setHeaderText("Could not open output file");
-            errorAlert.setContentText(
-                "An error occurred when attempting to open the file. Details below:\n\n" +
-                ex.getMessage()
-            );
-            errorAlert.showAndWait();
-        }
+    String os = System.getProperty("os.name").toLowerCase();
+    if (os.contains("win")) {
+        // Windows: Use cmd to open the file
+        new ProcessBuilder("cmd", "/c", "start", "\"\"", file.getAbsolutePath()).start();
+    } else if (os.contains("mac")) {
+        // macOS: Use the 'open' command
+        new ProcessBuilder("open", file.getAbsolutePath()).start();
+    } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+        // Linux: Use the 'xdg-open' command
+        new ProcessBuilder("xdg-open", file.getAbsolutePath()).start();
+    } else {
+        throw new UnsupportedOperationException("Unsupported operating system: " + os);
     }
 }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        private void writeDesignToFile() {
+    // Check if the designTextSummary is empty
+    if (designTextSummary.getText().isEmpty()) {
+        showAlert(Alert.AlertType.ERROR, "Nothing to save", "No designs to save", 
+                  "No primer designs were made, no file can be saved.");
+        return;
+    }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        String os = System.getProperty("os.name").toLowerCase();
-        }
-        try {
-        // Check the OS and open the file accordingly
-        if (os.contains("win")) {
-            // Windows: Use cmd to open the file
-            new ProcessBuilder("cmd", "/c", "start", "\"\"", file.getAbsolutePath()).start();
-        } else if (os.contains("mac")) {
-            // macOS: Use the 'open' command
-            new ProcessBuilder("open", file.getAbsolutePath()).start();
-        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-            // Linux: Use the 'xdg-open' command
-            new ProcessBuilder("xdg-open", file.getAbsolutePath()).start();
-        } else {
-            throw new UnsupportedOperationException("Unsupported operating system: " + os);
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text (*.txt)", "*.txt"));
+    fileChooser.setTitle("Write primer designs to file...");
+    fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+    File wFile = fileChooser.showSaveDialog(resultPane.getScene().getWindow());
+    if (wFile == null) {
+        return;
+    }
+
+    // Ensure file has .txt extension
+    if (!wFile.getName().endsWith(".txt")) {
+        wFile = new File(wFile.getAbsolutePath() + ".txt");
+    }
+    // Write designs to the file
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(wFile))) {
+        String[] designs = designTextSummary.getText().split("\n");
+        for (String design : designs) {
+            bw.write(design);
+            bw.newLine();
         }
     } catch (IOException ex) {
-        // If opening the file fails, show an error dialog
-        Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-        errorAlert.setTitle("Open Failed");
-        errorAlert.setHeaderText("Could not open output file");
-        errorAlert.setContentText(
-            "An exception was encountered when attempting to open the saved file. See details below:\n\n" +
-            ex.getMessage()
-        );
+        showExceptionAlert("Writing Failed", "Could not write primer designs to file", ex);
+        return;
+    }
+
+    // Display confirmation dialog
+    Optional<ButtonType> result = showConfirmationDialog("Done", "Finished writing",
+            "Primer designs successfully written to " + wFile.getAbsolutePath() +
+            "\n\nDo you want to open this file now?");
     
-        // Optionally, log the exception
-        ex.printStackTrace();
-
-        errorAlert.showAndWait();
+    if (result.isPresent() && result.get() == ButtonType.YES) {
+        openFile(wFile);
     }
-        else if (result.isPresent() 
-                && result.get() == noButton) {
-        // If the user clicks No, do nothing or log a message
-        System.out.println("User chose not to open the file.");
-    }
-      // Display an error dialog if file opening fails
-        Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-        errorAlert.setTitle("Open Failed");
-        errorAlert.setHeaderText("Could not open output file");
-        errorAlert.setContentText(
-            "An exception was encountered when attempting to open the saved file. See details below:\n\n" +
-            ex.getMessage()
-        );
+}
+private Optional<ButtonType> showConfirmationDialog(String title, String header, String content) {
+    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+    alert.setTitle(title);
+    alert.setHeaderText(header);
+    alert.setContentText(content);
 
-        // Optionally include the full exception details
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        ex.printStackTrace(pw);
-        String exceptionText = sw.toString();
+    alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+    return alert.showAndWait();
+}
 
-        TextArea textArea = new TextArea(exceptionText);
-        textArea.setEditable(false);
-        textArea.setWrapText(true);
-        textArea.setMaxWidth(Double.MAX_VALUE);
-        textArea.setMaxHeight(Double.MAX_VALUE);
+private void showAlert(Alert.AlertType type, String title, String header, String content) {
+    Alert alert = new Alert(type);
+    alert.setTitle(title);
+    alert.setHeaderText(header);
+    alert.setContentText(content);
+    alert.showAndWait();
+}
 
-        GridPane expContent = new GridPane();
-        expContent.setMaxWidth(Double.MAX_VALUE);
-        expContent.add(textArea, 0, 0);
+private void showExceptionAlert(String title, String header, Exception ex) {
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle(title);
+    alert.setHeaderText(header);
+    alert.setContentText("An exception occurred: " + ex.getMessage());
 
-        errorAlert.getDialogPane().setExpandableContent(expContent);
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    ex.printStackTrace(pw);
+    String exceptionText = sw.toString();
 
-        errorAlert.showAndWait();
-    }
-    });
-        writeDesignMenuItem.setOnAction(new EventHandler<ActionEvent>() {
-        @Override
-        public void handle(ActionEvent event) {
-            try {
-                writeDesignToFile();
-            } catch (IOException ex) {
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Writing Failed");
-                    alert.setHeaderText("Could not write primer designs to file");
-                    alert.setContentText("Exception encountered when attempting to write design details to file. See below:");
-                }         
-                    // Add exception details to the dialog
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    ex.printStackTrace(pw);
-                    String exceptionText = sw.toString();
-                    
-                    TextArea textArea = new TextArea(exceptionText);
-                    textArea.setEditable(false);
-                    textArea.setWrapText(true);
-                    
-                    textArea.setMaxWidth(Double.MAX_VALUE);
-                    textArea.setMaxHeight(Double.MAX_VALUE);
-                    GridPane.setVgrow(textArea, Priority.ALWAYS);
-                    GridPane.setHgrow(textArea, Priority.ALWAYS);
-                    
-                    GridPane expContent = new GridPane();
-                    expContent.setMaxWidth(Double.MAX_VALUE);
-                    expContent.add(new Label("The exception stacktrace was:"), 0, 0);
-                    expContent.add(textArea, 0, 1);
-                   
-                    alert.getDialogPane().setExpandableContent(expContent);
-                    alert.showAndWait();                
-        setCheckIsPcrButton();
-        }        
-        closeMenuItem.setOnAction(new EventHandler<ActionEvent>(){
-            @Override
-            public void handle(ActionEvent e){
-                Platform.runLater(new Runnable(){
-                    @Override
-                    public void run(){
-                        Stage stage = (Stage) resultPane.getScene().getWindow();
-                        stage.close();
-                    }
-                });
-            }
-        });
-        
-        if (System.getProperty("os.name").equals("Mac OS X")){
-           closeMenuItem.setAccelerator
-                (new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN));
-        }
-        
-        MenuItem copyItem = new MenuItem("Copy");
-        copyItem.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                ObservableList<TablePosition> posList = primerTable.getSelectionModel().getSelectedCells();
-                int old_r = -1;
-                StringBuilder clipboardString = new StringBuilder();
-                for (TablePosition p : posList) {
-                    int r = p.getRow();
-                    int c = p.getColumn();
-                    Object cell = primerTable.getColumns().get(c).getCellData(r);
-                    if (cell instanceof Hyperlink){
-                        Hyperlink link = (Hyperlink) cell;
-                        cell = link.getText();
-                    }
-                    if (cell == null)
-                        cell = "";
-                    if (old_r == r)
-                        clipboardString.append('\t');
-                    else if (old_r != -1)
-                        clipboardString.append('\n');
-                    clipboardString.append(cell);
-                    old_r = r;
-                    
-                }
-                final ClipboardContent content = new ClipboardContent();
-                content.putString(clipboardString.toString());
-                Clipboard.getSystemClipboard().setContent(content);
-            }
-        });
-        ContextMenu menu = new ContextMenu();
-        menu.getItems().add(copyItem);
-        copyItem.setAccelerator(new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN));
-        primerTable.setContextMenu(menu);
-        
-        
-        closeButton.setOnAction(new EventHandler<ActionEvent>(){
-            @Override
-            public void handle(ActionEvent e){
-                Platform.runLater(new Runnable(){
-                    @Override
-                    public void run(){
-                        Stage stage = (Stage) closeButton.getScene().getWindow();
-                        stage.close();
-                    }
-                });
-            }
-        });
-        
-    }
-    
-    public void displayData(ArrayList<Primer3Result> regions, 
-            ArrayList<String> design, final HashMap<String, String> ref){
-        int totalPairs = 0;
-        int failures = 0;
-        refSeqs = ref;
-        if (ref != null){
-            refTab.setDisable(false);
-            writeRefsMenuItem.setDisable(false);
-            refChoiceBox.getItems().clear();
-            refChoiceBox.getItems().addAll(ref.keySet());
-            refChoiceBox.getSelectionModel().selectedIndexProperty().addListener
-                (new ChangeListener<Number>(){
-                @Override
-                public void changed (ObservableValue ov, Number value, final Number new_value){ 
-                    if (new_value.intValue() >= 0){
-                        final String id = (String) refChoiceBox.getItems().get(new_value.intValue());
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                //System.out.println("Selecting " + id );
-                                //System.out.println("Seq =  " + ref.get(id) );
-                                referenceTextArea.setText(splitStringOnLength(
-                                        ref.get(id), 60, "\n"));
-                            }
-                        });
-                    }
+    TextArea textArea = new TextArea(exceptionText);
+    textArea.setEditable(false);
+    textArea.setWrapText(true);
+    textArea.setMaxWidth(Double.MAX_VALUE);
+    textArea.setMaxHeight(Double.MAX_VALUE);
 
-                }
-            });
-            refChoiceBox.getSelectionModel().selectFirst();
-        }else{
-            refTab.setDisable(true);
-            writeRefsMenuItem.setDisable(true);
-        }
-        StringBuilder designString = new StringBuilder();
-        for (Primer3Result r: regions){
-            data.add(r);
-            primerTable.setItems(data);
-            if (r.getProductSize() > 0){
-                totalPairs++;
-            }else{
-                failures++;
-            }
-        }
-        for (String s: design){
-            designString.append(s).append("\n");
-        }
-        designTextSummary.setText(designString.toString());
-        StringBuilder labelText = new StringBuilder (totalPairs + " primer pairs designed");
-        if (failures > 0){
-            labelText.append(". ").append(failures).append(" design");
-            if (failures > 1){
-                labelText.append("s");
-            }
-            labelText.append(" failed.");
-        }
-        summary = labelText.toString();
-        summaryLabel.setText(summary);
-        
-    }
-    
+    GridPane expContent = new GridPane();
+    expContent.setMaxWidth(Double.MAX_VALUE);
+    expContent.add(textArea, 0, 0);
+
+    alert.getDialogPane().setExpandableContent(expContent);
+    alert.showAndWait();
+}
     private String splitStringOnLength(String s, Integer n, String sep){
         StringBuilder split = new StringBuilder();
         for (int i = 0; i < s.length(); i += n){
@@ -1216,8 +962,7 @@ if (response.isPresent() && response.get() == ButtonType.OK) {
         errorAlert.showAndWait();
     }
 }
-    private void checkIsPcrResults() throws MalformedURLException, IOException{
-        
+    private void checkIsPcrResults() throws MalformedURLException, IOException {        
         final Service<ObservableList<Primer3Result>> service = new Service<ObservableList<Primer3Result>>(){
             @Override
             protected Task<ObservableList<Primer3Result>> createTask(){
@@ -1397,8 +1142,7 @@ alert.setContentText(
         closeMenuItem.setDisable(true);
         service.start();
         
-    }
-    
+    }    
     private void setCheckIsPcrButton() {
     checkIsPcrButton.setText("Check isPCR Results");
     checkIsPcrButton.setOnAction(new EventHandler<ActionEvent>() {
@@ -1426,9 +1170,7 @@ alert.setContentText(
             }
         }
     });
-}
-    
-    
+}        
     private void openFile(File f) throws IOException{
         String command;
         //Desktop.getDesktop().open(f);
@@ -1438,8 +1180,10 @@ alert.setContentText(
             command = "open " + f;
         }else if (System.getProperty("os.name").contains("Windows")){
             command = "cmd /C start " + f;
-        } else 
-            return
-        Runtime.getRuntime().exec(command);
+        } else {
+            return;
         }
+                    Runtime.getRuntime().exec(command);
+    }
+    }
     

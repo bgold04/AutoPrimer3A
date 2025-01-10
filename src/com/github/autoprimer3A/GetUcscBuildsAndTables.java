@@ -43,7 +43,7 @@ public class GetUcscBuildsAndTables {
     private LinkedHashMap<String, String> buildToDescription = new LinkedHashMap<>();
 //maps build name to description e.g. hg19 => 'Human Feb. 2009 (GRCh37/hg19) Genome at UCSC'
     
-    private Document dasGenomeXml;
+    public Document dasGenomeXml;
     
     //get build names and DAS urls
     public void connectToUcsc() throws DocumentException, MalformedURLException{

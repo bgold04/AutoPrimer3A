@@ -21,10 +21,7 @@
  */
 package com.github.autoprimer3A;
 
-import com.github.autoprimer3A.GeneDetails.Exon;
-import static com.github.autoprimer3A.ReverseComplementDNA.reverseComplement;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -33,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -70,7 +66,6 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -87,12 +82,10 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import javax.swing.*;
 import net.lingala.zip4j.exception.ZipException;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -278,7 +271,6 @@ public String getBuildToMapMaster() {
 public void fetchBuildToMapMaster(Document document) {
     try {
         // Assume the master map is stored in a specific XML node
-
         NodeList nodes = document.getElementsByTagName("buildMaster");
         if (nodes.getLength() > 0) {
             Node node = nodes.item(0);
@@ -288,7 +280,6 @@ public void fetchBuildToMapMaster(Document document) {
         }
     } 
     catch (Exception e) {
-
         e.printStackTrace();
     }
 }        
@@ -1179,7 +1170,7 @@ if (rewriteConfig) {
     try {
         System.out.println("Rewriting output...");
         
-        ap3AConfig.writeGenomeXmlFile(buildsAndTables.getDasGenomeXmlDocument());
+        ap3AConfig.writeGenomeXmlFile(getDasGenomeXmlDocument());
     } 
     catch { (IOException ex) {
     
@@ -1218,22 +1209,18 @@ if (rewriteConfig) {
             + "a background check of available genomes."
             + "See exception below."
         );
-
+alert.showAndWait();
         // Optionally log the exception details somewhere (e.g., console or log file)
         e.getSource().getException().printStackTrace();
-    }
-        // Show the alert
-        alert.showAndWait();
-    }
-        
-                        
-    checkUcscTablesTask.setOnSucceeded(new EventHandler<WorkerStateEvent>()) {
-        
-        @Override
-        public void handle(WorkerStateEvent e) {
-            System.out.println("Finished getting tables for " + genome);
-            Document doc = (Document) e.getSource().getValue();
+    }                                            
+checkUcscTablesTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+    @Override
+    public void handle(WorkerStateEvent e) {
+           System.out.println("Finished getting tables for " + genome);
+           Document doc = (Document) e.getSource().getValue();
 
+    }
+});
             try {
                 if (!ap3AConfig.getBuildXmlDocument(genome).asXML().equals(doc.asXML()) && doc != null) {
                     // Tables differ, check whether it affects relevant tables
@@ -1301,9 +1288,7 @@ if (rewriteConfig) {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-        }
-    });
-
+        }    
                     // Create an error alert
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error");
@@ -1311,15 +1296,13 @@ if (rewriteConfig) {
                     alert.setContentText(
         "AutoPrimer3A encountered an error when performing "
                             + "a background check of available genomes."
-                            + "See exception below.");
-        
+                            + "See exception below.");        
     // Optionally log the exception details somewhere (e.g., console or log file)
     //ex.printStackTrace();
-
     // Show the alert
     alert.showAndWait();
-
-    }   
+    }
+        }
     
 private void checkUcscTables(final String genome){
         //Background check that tables for given genome are up to date
@@ -1334,13 +1317,9 @@ private void checkUcscTables(final String genome){
             }
         };
         checkUcscTablesTask.setOnSucceeded(
-
-                new EventHandler<WorkerStateEvent>()
-        
+                new EventHandler<WorkerStateEvent>()        
                 @Override
-
-                public void handle(WorkerStateEvent e) {
-    
+                public void handle(WorkerStateEvent e) {    
                     System.out.println("Finished getting tables for " + genome);
     Document doc = (Document) e.getSource().getValue();
     try {
@@ -1407,7 +1386,7 @@ private void showErrorAlert(String title, String content, Exception ex) {
     alert.setContentText(content + "\n\nSee exception below:\n" + ex.getMessage());
     alert.showAndWait();
 }
-        
+                }        
            checkUcscTablesTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
             @Override
             public void handle (WorkerStateEvent e){
@@ -1419,12 +1398,8 @@ private void showErrorAlert(String title, String content, Exception ex) {
                             + "a background check of available gene/SNP tables "
                             + "for genome " + genome + ". See exception below.");
             alert.showAndWait();
-        }
-              
-                   
-       new Thread(checkUcscTablesTask).start();
-        
-
+        }                  
+       new Thread(checkUcscTablesTask).start();        
     //only checks snp and gene tables in lists to see if they are the same
     private boolean configTablesDiffer(LinkedHashSet<String> tables, 
             LinkedHashSet<String> configTables){
@@ -1476,14 +1451,11 @@ private void showErrorAlert(String title, String content, Exception ex) {
         
         return (t.equals("refGene") || t.equals("knownGene") || 
                 t.equals("ensGene") || t.equals("xenoRefGene"));        
-    }
-
-        }
+    }   
                 
 }
 getBuildsTask.setOnSucceeded(new EventHandler<WorkerStateEvent>(){
             @Override
-            
             public void handle (WorkerStateEvent e){
 
 LinkedHashMap<String, String> buildIds = 
@@ -1578,7 +1550,7 @@ public void handle (WorkerStateEvent e){
                     progressIndicator.setProgress(0);
                     progressLabel.setText("");
                     setLoading(false);
-                }catch(IOException|DocumentException ex){
+                } catch (IOException|DocumentException ex){
                     //ex.printStackTrace();
     Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
@@ -1604,7 +1576,7 @@ public void handle (WorkerStateEvent e){
                 setLoading(false);
                 setCanRun(false);           
         }
-                
+                }
         getTablesTask.setOnCancelled(new EventHandler<WorkerStateEvent>(){
             @Override
             public void handle (WorkerStateEvent e){
@@ -1619,15 +1591,11 @@ public void handle (WorkerStateEvent e){
            @Override
            public void handle(ActionEvent actionEvent){
                 getTablesTask.cancel();
-
-            }
-       }
-       
+           }                          
         progressIndicator.setProgress(-1);
         new Thread(getTablesTask).start();
-     }
-                                                
-                        public void loadRegionsFile(){
+                                                 
+public void loadRegionsFile(){
     /*  we need to know how many regions we already have to make sure we don't go over
         MAX_LINES_PER_DESIGN
     */
@@ -1909,7 +1877,7 @@ public void handle (WorkerStateEvent e){
                 alert.getButtonTypes().setAll(yesButton, noButton);
 
                 // Show the dialog and capture the response
-                Optional<ButtonType> response = alert.showAndWait();
+                Optional <ButtonType> response = alert.showAndWait();
 
                 if (response.isPresent() && response.get() == yesButton) {
                 // Handle Yes action
@@ -2114,7 +2082,7 @@ public void handle (WorkerStateEvent e){
                 primerResult.put("design", designs);
                 return primerResult;
             }
-        };
+        
         progressIndicator.progressProperty().unbind();
         progressIndicator.progressProperty().bind(designTask.progressProperty());
         progressLabel.textProperty().bind(designTask.messageProperty());
@@ -2149,10 +2117,11 @@ public void handle (WorkerStateEvent e){
                         alert.setHeaderText("No primers found for your targets.");
                         alert.setContentText("No primer designs were attempted for your targets");
                         alert.showAndWait();  
-                        }    
+                            
                     progressIndicator.progressProperty().set(0);
                     return;
-                }
+                 }
+        }
                 progressLabel.setText(result.get("primers").size() +
                         " primer pairs designed.");
                 FXMLLoader tableLoader;
@@ -2191,7 +2160,8 @@ public void handle (WorkerStateEvent e){
                     ex.printStackTrace();
                }
             }
-        });
+        }
+        }
         designTask.setOnCancelled(new EventHandler<WorkerStateEvent>(){
             @Override
             public void handle (WorkerStateEvent e){
@@ -2215,9 +2185,7 @@ public void handle (WorkerStateEvent e){
                 if (e.getSource().getException() instanceof SQLException){
                 
                 }
-                    import javafx.scene.control.Alert;
-                import javafx.scene.control.Alert.AlertType;
-
+                
                 try {
                 // Your logic that might throw an exception
                 } catch (Exception e) {
@@ -2250,18 +2218,15 @@ public void handle (WorkerStateEvent e){
                 designErr.getDialogPane().setExpandableContent(exceptionDetails);
                 designErr.showAndWait();
                 }
-                    });
+                    }        
         cancelButton.setOnAction(new EventHandler<ActionEvent>(){
            @Override
            public void handle(ActionEvent actionEvent){
                 designTask.cancel();
-            }
-        });
+            }        
         setRunning(true);
         new Thread(designTask).start();
-
-
-    }
+    
     
     public boolean checkDesignParameters(){
         if (Integer.valueOf(flankingRegionsTextField.getText())
@@ -2280,77 +2245,69 @@ public void handle (WorkerStateEvent e){
         
         if (Integer.valueOf(optSizeTextField.getText()) < 
                 Integer.valueOf(minSizeTextField.getText())){
-            Dialogs sizeError = Dialogs.create().title("Primer Size Error").
-                    masthead("Invalid values for primer size fields.").
-                    message("Min Primer Size can not be greater than Opt "
-                            + "Primer Size.")
-                    .styleClass(Dialog.STYLE_CLASS_NATIVE);
-            sizeError.showError();
+            
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Primer Size Error");
+        alert.setHeaderText("Invalid values for primer size fields.");
+        alert.setContentText("Min Primer Size can not be greater than Opt "
+                            + "Primer Size.");
+        alert.showAndWait();
+    }       
             return false;
         }
         
         if (Integer.valueOf(maxSizeTextField.getText()) < 
-                Integer.valueOf(optSizeTextField.getText())){
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            Dialogs sizeError = Dialogs.create().title("Primer Size Error").
-                    masthead("Invalid values for primer size fields.").
-                    message("Max Primer Size can not be less than Opt "
-                            + "Primer Size.")
-                    .styleClass(Dialog.STYLE_CLASS_NATIVE);
-            sizeError.showError();
+                Integer.valueOf(optSizeTextField.getText())){            
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Primer Size Error");
+        alert.setHeaderText("Invalid values for primer size fields.");
+        alert.setContentText("Max Primer Size can not be less than Opt "
+                            + "Primer Size.");
+        alert.showAndWait();
+        }
             return false;
         }
-        
-        
+                
         if (Double.valueOf(optTmTextField.getText()) < 
                 Double.valueOf(minTmTextField.getText())){
-            Dialogs sizeError = Dialogs.create().title("Primer TM Error").
-                    masthead("Invalid values for primer TM fields.").
-                    message("Min Primer TM can not be greater than Opt "
-                            + "Primer TM.")
-                    .styleClass(Dialog.STYLE_CLASS_NATIVE);
-            sizeError.showError();
-            return false;
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Primer TM Error");
+        alert.setHeaderText("Invalid values for primer TM fields.");
+        alert.setContentText("Min Primer TM can not be greater than Opt "
+                            + "Primer TM.");
+        alert.showAndWait();
+        }
+             return false;
         }
         
         if (Double.valueOf(maxTmTextField.getText()) < 
                 Double.valueOf(optTmTextField.getText())){
-            Dialogs sizeError = Dialogs.create().title("Primer TM Error").
-                    masthead("Invalid values for primer TM fields.").
-                    message("Max Primer TM can not be less than Opt "
-                            + "Primer TM.")
-                    .styleClass(Dialog.STYLE_CLASS_NATIVE);
-            sizeError.showError();
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Primer TM Error");
+        alert.setHeaderText("Invalid values for primer TM fields.");
+        alert.setContentText("Max Primer TM can not be less than Opt "
+                            + "Primer TM.");
+        alert.showAndWait();
+    }            
             return false;
         }
         return true;
-    }
+    
     
     public void designPrimersToGene(){
         //check that we've got at least one gene in our input box
         if (!genesTextField.getText().matches(".*\\w.*")){
-            return;//TO DO show ERROR dialog maybe
-        
+            return;//TO DO show ERROR dialog maybe        
         resetEmptyPrimerSettings();
         if (!checkSizeRange(sizeRangeTextField)){
             displaySizeRangeError();
-            return;
-        
+            return;        
         final int optSize = Integer.valueOf(splitRegionsTextField.getText());
         final int flanks = Integer.valueOf(flankingRegionsTextField.getText());
         final int designBuffer = Integer.valueOf(minDistanceTextField.getText());
         if (! checkDesignParameters()){
             return;
-        
-                            
+                                    
         setRunning(true);
         final Task<GeneSearchResult> geneSearchTask = 
                 new Task<GeneSearchResult>(){
@@ -2381,9 +2338,9 @@ public void handle (WorkerStateEvent e){
                     //ArrayList<GeneDetails> found;
                     try {
                         found = getGeneDetails(s, geneSearcher);
-                    } catch (GetGeneCoordinates.GetGeneFromIDException ex) {
+                    } catch (GetGeneCoordinates.GetGeneFromIDException (ex)) {
                         Logger.getLogger(AutoPrimer3A.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (GetGeneCoordinates.GetGeneFromSymbolException ex) {
+                    } catch (GetGeneCoordinates.GetGeneFromSymbolException (ex)) {
                         Logger.getLogger(AutoPrimer3A.class.getName()).log(Level.SEVERE, null, ex);
                     
                     if (found.isEmpty()){
@@ -2431,11 +2388,17 @@ public void handle (WorkerStateEvent e){
                                 " non-coding transcripts were found.\n";
                     }
 
-                    Dialogs noTargetsError = Dialogs.create().title("No Genes Found").
-                            masthead("No targets found.").
-                            message(message)
-                            .styleClass(Dialog.STYLE_CLASS_NATIVE);
-                    noTargetsError.showError();
+}
+}
+}
+}
+}
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("No Genes Found");
+                alert.setHeaderText("No targets found.");
+                alert.setContentText(message);
+                alert.showAndWait();
+    }                    
                     progressIndicator.progressProperty().unbind();
                     progressLabel.textProperty().unbind();
                     progressIndicator.progressProperty().set(0);
@@ -2451,36 +2414,21 @@ public void handle (WorkerStateEvent e){
                                 + "non-coding:\n"+ String.join(", ", nonCodingTargets) 
                                 + ".\n\n");
                     }
-                    message.append("Continue anyway?");
-                    
-                    
-                    
-                    
-                    
-                    
-                    Action response = Dialogs.create().title("").
-                            masthead("Could Not Find Some Genes").
-                            message(message.toString()).
-                            actions(Dialog.ACTION_YES, Dialog.ACTION_NO).
-                            styleClass(Dialog.STYLE_CLASS_NATIVE).
-                            showConfirm();
-
-                    if (response == Dialog.ACTION_NO){
-                    
-                        
-                        
-                        
-                        
-                        
-                        setRunning(false);
+                    message.append("Continue anyway?")
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("warning");
+                alert.setHeaderText("Could Not Find Some Genes");
+                alert.setContentText(message);
+                alert.showAndWait();
+    }
+                            setRunning(false);
                         progressIndicator.progressProperty().unbind();
                         progressLabel.textProperty().unbind();        
                         progressLabel.setText("Design cancelled");
                         progressIndicator.progressProperty().set(0);
                         return;
                     }
-                }
-                
+                }                
                 final Task<HashMap<String, ArrayList>> designTask = 
                         new Task<HashMap<String, ArrayList>>(){
                     @Override
@@ -2542,18 +2490,7 @@ public void handle (WorkerStateEvent e){
                                                         + rName + ". See below:");
                         alert.showAndWait();  
                         }     
-                            
-                                            
-                                            
-                                            
-                                            
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                });
+                                 });
                                 return null;
                             }
                             //System.out.println(dna);//debug only
@@ -2747,17 +2684,7 @@ public void handle (WorkerStateEvent e){
                         alert.setContentText("No primer designs were attempted for your targets");
                         alert.showAndWait();  
                         } 
-                            
-                            
-                            
-                               
-                            
-                                
-                                
-                                
-                                
-                                
-                                progressIndicator.progressProperty().set(0);
+                                 progressIndicator.progressProperty().set(0);
                             return;
                         }
                         if (result.get("design").isEmpty()){
@@ -2823,7 +2750,7 @@ public void handle (WorkerStateEvent e){
                         progressIndicator.progressProperty().unbind();
                         progressIndicator.progressProperty().set(0);
                     }
-                }
+                
         }
                 designTask.setOnFailed(new EventHandler<WorkerStateEvent>(){
                 
@@ -2854,16 +2781,10 @@ public void handle (WorkerStateEvent e){
                         alert.setContentText("AutoPrimer3A encountered an error designing "
                                 + "primers to your targets. See exception below.");
                         alert.showAndWait();
-                }         
-                  }
-                }
-
-                cancelButton.setOnAction(new EventHandler<ActionEvent>()){
-                   
-                    @Override
-                   
-                    public void handle(ActionEvent actionEvent){
-                    
+                }                           
+                cancelButton.setOnAction(new EventHandler<ActionEvent>()){                   
+                    @Override                   
+                    public void handle(ActionEvent actionEvent){                    
                     designTask.cancel();
                     }
                 
@@ -2884,8 +2805,7 @@ new Thread(designTask).start();
                 progressIndicator.progressProperty().unbind();
                 progressIndicator.progressProperty().set(0);
             }
-
-        });
+        }
         geneSearchTask.setOnFailed(new EventHandler<WorkerStateEvent>()){
             
                     @Override
@@ -2903,7 +2823,7 @@ new Thread(designTask).start();
                         alert.showAndWait();
                 }        
  
-        );
+        )
         cancelButton.setOnAction(new EventHandler<ActionEvent>(){
            @Override
            public void handle(ActionEvent actionEvent){
@@ -2915,14 +2835,10 @@ new Thread(designTask).start();
         progressIndicator.progressProperty().bind(geneSearchTask.progressProperty());
         progressLabel.textProperty().unbind(); 
         progressLabel.textProperty().bind(geneSearchTask.messageProperty());
-        new Thread(geneSearchTask).start();   
-    
-    }
-            
-    private String createReferenceSequence(String dna, int offset, int flanks);
-            
-            ArrayList<GenomicRegionSummary> exons, boolean revComp){
-        
+        new Thread(geneSearchTask).start();       
+    }            
+    private String createReferenceSequence(String dna, int offset, int flanks);            
+            ArrayList<GenomicRegionSummary> exons, boolean revComp){        
         StringBuilder dnaTarget = new StringBuilder();
         int prevEnd = 0;
         for (int i = 0; i < exons.size(); i++){
@@ -3277,8 +3193,7 @@ new Thread(designTask).start();
                             .append(maxMisprimeTextField.getText()).append("\n");
             
                 }
-            }
-            
+            }            
             p3_job.append("=");
             System.out.println(p3_job.toString());//debug only
             ArrayList<String> command = new ArrayList<>();
@@ -3409,9 +3324,6 @@ new Thread(designTask).start();
                 genes.addAll(geneSearcher.getGeneFromSymbol(searchString, 
                         (String) genomeChoiceBox.getSelectionModel().getSelectedItem(),
                         (String) databaseChoiceBox.getSelectionModel().getSelectedItem()));
-            
-        
-
 /*if (t.equals("refGene") || t.equals("knownGene") || 
                             t.equals("ensGene") || t.equals("xenoRefGene"))*/
         for (int i = 0; i < genes.size(); i++){
@@ -3420,22 +3332,21 @@ new Thread(designTask).start();
                      + "-" + genes.get(i).getTxEnd());
                     }
         return genes;
-        }   
-                        
+        }                           
     public Boolean 
         getCanRun(){
         return CANRUN;
     }  /**
  * The main() method
   */
-import javafx.application.Application;
-import javafx.stage.Stage;
 
+        }
 public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Hello JavaFX");
         primaryStage.show();    }
-public static void main(String[] args) {
+    public static void main(String[] args) {
         launch(args);
-    }
+    
+}
