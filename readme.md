@@ -1,6 +1,11 @@
  ## CURRENT RELEASE
 
-The [latest version of AutoPrimer3](https://github.com/david-a-parry/autoprimer3/releases/latest) fixes issues arising from UCSC's recent update to their genome metadata that stopped previous versions from working. It also gives the option to specify names for targets when designing to regions/coordinates. 
+This project, AutoPrimer3A, is based on the original work of David Parry, who created AutoPrimer3. All original code and documentation remain Copyright © David Parry under the GPLv3 license.
+
+AutoPrimer3A continues as a separate and independently maintained project.
+
+
+The latest version of AutoPrimer3A updates the code to Java1.8.0_421 and uses mysql-connector-j-9.0.0 to interrogate the MariaDB at UCSC. It provides a facility to specify coordinates in bed format or names for target genes when designing primers or probes 
 
 ---
 
