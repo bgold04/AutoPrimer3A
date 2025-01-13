@@ -97,6 +97,7 @@
                   <children>
                     <ProgressIndicator fx:id="progressIndicator" disable="false" opacity="1.0" prefHeight="25.0" prefWidth="47.0" progress="0.0" style="-fx-fill: null;" visible="true" />
                       <Label fx:id="progressLabel" prefHeight="16.0" prefWidth="295.0" text="AutoPrimer3A" />
+                    <Button fx:id="refreshButton" text="Refresh" />
                     <Button fx:id="refreshButton" mnemonicParsing="false" prefHeight="26.0" prefWidth="72.0" text="Refresh" />
                     <Button fx:id="cancelButton" disable="false" mnemonicParsing="false" prefHeight="26.0" prefWidth="75.0" text="Cancel" />
                     <Button fx:id="runButton" defaultButton="true" mnemonicParsing="false" onAction="#designPrimersToGene" prefHeight="26.0" prefWidth="76.0" style="&#10;" text="Design" textAlignment="LEFT" />

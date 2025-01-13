@@ -7,38 +7,79 @@
 <!-- the Compile on Save feature is turned off for the project. -->
 <!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
 <!-- in the project's Project Properties dialog box.-->
+<!-- Build.xml was written by Bert Gold, PhD <bgold04@gmail.com> -->
+<!-- with the help of ChatGPT on Monday January 13, 2025 -->
+
 <project name="AutoPrimer3A" default="default" basedir="." xmlns:fx="javafx:com.sun.javafx.tools.ant">
     <description>Builds, tests, and runs the project AutoPrimer3A.</description>
+
+    <!-- Properties -->
+    <property name="src.dir" value="src"/>
+    <property name="build.dir" value="build"/>
+    <property name="build.classes.dir" value="${build.dir}/classes"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="dist.dir" value="dist"/>
+    <property name="application.title" value="AutoPrimer3A"/>
+    <property name="application.vendor" value="YourNameOrOrganization"/>
+    <property name="javafx.main.class" value="com.github.autoprimer3A.AutoPrimer3A"/>
+    <property name="javafx.run.width" value="800"/>
+    <property name="javafx.run.height" value="600"/>
+
+    <!-- JDK and JavaFX paths -->
+    <property name="platform.home" value="/Library/Java/JavaVirtualMachines/jdk-1.8.jdk/Contents/Home"/>
+    <property name="platform.javac" value="${platform.home}/bin/javac"/>
+    <property name="javafx.sdk" value="/Library/Java/JavaVirtualMachines/jdk-1.8.jdk/Contents/Home/javafx-sdk"/>
+    <property name="javafx.runtime" value="${javafx.sdk}"/>
+
     <import file="nbproject/build-impl.xml"/>
 
-    <target name="-post-jfx-deploy">
-       
-       <fx:deploy width="${javafx.run.width}" height="${javafx.run.height}" 
-                  nativeBundles="all"
-                  verbose="true"
-                  outdir="${basedir}/${dist.dir}" outfile="${application.title}">
-          <fx:application name="${application.title}" 
-                          mainClass="${javafx.main.class}"
-			  version="3A"
-			  id="AutoPrimer3A"/>
-          <fx:info category="Science" />
-          <fx:resources>
-              <fx:fileset dir="dist" includes="*.jar"/>  
-              <fx:fileset dir="dist" includes="lib/*.jar"/>
-              <fx:fileset dir="package/linux" includes = "*"/>          
-          </fx:resources>
-          
-          <fx:info title="${application.title}" 
-                   vendor="${application.vendor}"/>
-          <fx:platform>
-          </fx:platform>
-        </fx:deploy>      
-        <!--  <mkdir dir="${basedir}/${dist.dir}/bundles/${application.title}/runtime/jre/lib/${os.arch}/client"/>
-        <copy file="${basedir}/native/${os.name}/${os.arch}/libjvm.so" todir="${basedir}/${dist.dir}/bundles/${application.title}/runtime/jre/lib/${os.arch}/client">
-                        </copy>  
-    -->
-     </target>
+    <!-- Pre-initialization -->
+    <target name="-pre-init">
+        <!-- Additional pre-init tasks can be added here -->
+    </target>
 
+    <!-- Initialization -->
+    <target name="init">
+        <mkdir dir="${build.classes.dir}"/>
+    </target>
+
+    <!-- Compilation -->
+    <target name="compile" depends="init">
+        <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false" executable="${platform.javac}">
+            <classpath>
+                <fileset dir="${lib.dir}" includes="*.jar"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <!-- Deployment -->
+    <target name="deploy" depends="compile">
+        <fx:deploy width="${javafx.run.width}" height="${javafx.run.height}" 
+                   nativeBundles="all" verbose="true"
+                   outdir="${basedir}/${dist.dir}" outfile="${application.title}">
+            <fx:application name="${application.title}" 
+                            mainClass="${javafx.main.class}" 
+                            version="3A" id="AutoPrimer3A"/>
+            <fx:info category="Science"/>
+            <fx:resources>
+                <fx:fileset dir="dist" includes="*.jar"/>
+                <fx:fileset dir="dist" includes="lib/*.jar"/>
+            </fx:resources>
+            <fx:info title="${application.title}" vendor="${application.vendor}"/>
+            <fx:platform/>
+        </fx:deploy>
+    </target>
+
+    <!-- Clean Target -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <!-- Default Target -->
+    <target name="default" depends="compile, deploy">
+        <echo message="Build and deployment completed for ${application.title}."/>
+    </target>
     <!--
 
     There exist several targets which are by default empty and which can be 

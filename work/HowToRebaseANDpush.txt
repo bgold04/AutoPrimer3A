@@ -1,0 +1,31 @@
+git ls git I like to start out with
+git status (within my branch)
+then add/rm (within my branch)
+then git commit (my branch)
+then go through the routine below
+
+Does your project prefer git rebase instead of git merge? Has your branch fallen out of sync with the main branch and you are unable to automate your rebase due to conflicts? If so, you might have run into rebase hell. This happens when you try to git rebase, solve your conflicts, and push to the main branch, only to find that the main branch is now, once again, out of sync in a never-ending loop. Let's break out of rebase hell with this short guide to rebasing.
+
+The steps
+Go to the branch in need of rebasing
+Enter git fetch origin (This syncs your main branch with the latest changes)
+git stash create
+git stash drop 
+git reset --hard
+Enter git rebase origin/main (or git rebase origin/master if your main branch is named master)
+Fix merge conflicts that arise however you see fit
+After fixing merge conflicts, git add FILE previously merge conflicted files
+Enter git rebase --continue (or git rebase --skip if git complains that there were no changes after resolving all conflicts)
+Repeat as necessary as merge conflicts arise in the subsequent commits
+Once the rebase is complete, enter git push origin HEAD --force
+
+This command pushes your rebase fixed branch to remote. The --force is important as it tells remote, "I know these changes are correct, accept them as is." Without the --force flag, your remote branch will continue to believe it is out of sync and will claim a merge conflict.
+
+And that's it. You have now git rebased the main branch onto your feature branch and broken yourself out of rebase hell.
+
+
+
+git add energy_project_overview.docx
+git add energy_startup.sh
+git add scripts/
+git add source_energies_inventory.tsv
