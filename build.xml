@@ -13,6 +13,13 @@
 <project name="AutoPrimer3A" default="default" basedir="." xmlns:fx="javafx:com.sun.javafx.tools.ant">
     <description>Builds, tests, and runs the project AutoPrimer3A.</description>
 
+    <!-- Task Definition for JavaFX Deployment -->
+    <taskdef uri="javafx:com.sun.javafx.tools.ant" resource="com/sun/javafx/tools/ant/antlib.xml">
+        <classpath>
+            <pathelement location="/Library/Java/JavaVirtualMachines/jdk1.8.0_40.jdk/Contents/Home/lib/ant-javafx.jar"/>
+        </classpath>
+    </taskdef>
+
     <!-- Properties -->
     <property name="src.dir" value="src"/>
     <property name="build.dir" value="build"/>
@@ -28,32 +35,37 @@
     <!-- JDK and JavaFX paths -->
     <property name="platform.home" value="/Library/Java/JavaVirtualMachines/jdk-1.8.jdk/Contents/Home"/>
     <property name="platform.javac" value="${platform.home}/bin/javac"/>
-    <property name="javafx.sdk" value="/Library/Java/JavaVirtualMachines/jdk-1.8.jdk/Contents/Home/javafx-sdk"/>
+    <property name="javafx.sdk" value="${basedir}/lib"/>
     <property name="javafx.runtime" value="${javafx.sdk}"/>
-
     <import file="nbproject/build-impl.xml"/>
-
-    <!-- Pre-initialization -->
-    <target name="-pre-init">
-        <!-- Additional pre-init tasks can be added here -->
-    </target>
 
     <!-- Initialization -->
     <target name="init">
         <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${dist.dir}"/>
     </target>
 
     <!-- Compilation -->
     <target name="compile" depends="init">
-        <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false" executable="${platform.javac}">
+        <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false" executable="${platform.javac}" source="1.8" target="1.8">
             <classpath>
                 <fileset dir="${lib.dir}" includes="*.jar"/>
             </classpath>
         </javac>
     </target>
 
+    <!-- JAR Creation -->
+    <target name="create-jar" depends="compile">
+        <fx:jar destfile="${dist.dir}/${application.title}.jar" applicationClass="${javafx.main.class}">
+            <resources>
+                <fileset dir="${build.classes.dir}"/>
+                <fileset dir="${lib.dir}" includes="*.jar"/>
+            </resources>
+        </fx:jar>
+    </target>
+
     <!-- Deployment -->
-    <target name="deploy" depends="compile">
+    <target name="deploy" depends="create-jar">
         <fx:deploy width="${javafx.run.width}" height="${javafx.run.height}" 
                    nativeBundles="all" verbose="true"
                    outdir="${basedir}/${dist.dir}" outfile="${application.title}">
@@ -62,8 +74,7 @@
                             version="3A" id="AutoPrimer3A"/>
             <fx:info category="Science"/>
             <fx:resources>
-                <fx:fileset dir="dist" includes="*.jar"/>
-                <fx:fileset dir="dist" includes="lib/*.jar"/>
+                <fx:fileset dir="${dist.dir}" includes="*.jar"/>
             </fx:resources>
             <fx:info title="${application.title}" vendor="${application.vendor}"/>
             <fx:platform/>
@@ -72,16 +83,17 @@
 
     <!-- Clean Target -->
     <target name="clean">
-        <delete dir="${build.dir}"/>
+        <delete>
+            <fileset dir="${build.dir}" includes="**/*"/>
+        </delete>
         <delete dir="${dist.dir}"/>
     </target>
 
     <!-- Default Target -->
-    <target name="default" depends="compile, deploy">
+    <target name="default" depends="deploy">
         <echo message="Build and deployment completed for ${application.title}."/>
     </target>
     <!--
-
     There exist several targets which are by default empty and which can be 
     used for execution of your tasks. These targets are usually executed 
     before and after some main targets. They are: 
